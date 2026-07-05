@@ -3,10 +3,6 @@ using System.Windows.Forms;
 
 namespace OsiguranjApp.Forme
 {
-    /// <summary>
-    /// Stavka za ComboBox koja čuva ID i tekst.
-    /// Koristi se u svim formama umesto anonimnih objekata.
-    /// </summary>
     public class ComboItem
     {
         public int     Id    { get; }
@@ -21,12 +17,8 @@ namespace OsiguranjApp.Forme
         public override string ToString() => Tekst ?? "";
     }
 
-    /// <summary>
-    /// Centralizovani UI helpers — boje, stilizovanje grida, dugmad.
-    /// </summary>
     public static class UiHelper
     {
-        // ---- Boje ----
         public static readonly Color Plava        = Color.FromArgb(30,  64,  103);
         public static readonly Color PlavaSvetla  = Color.FromArgb(52,  120, 186);
         public static readonly Color Zelena       = Color.FromArgb(39,  174, 96);
@@ -35,7 +27,6 @@ namespace OsiguranjApp.Forme
         public static readonly Color Siva         = Color.FromArgb(120, 120, 120);
         public static readonly Color PozadinaForm = Color.FromArgb(240, 242, 245);
 
-        // ---- Grid ----
         public static void StilizirajGrid(DataGridView dgv)
         {
             typeof(DataGridView).InvokeMember(
@@ -73,7 +64,6 @@ namespace OsiguranjApp.Forme
             dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
         }
 
-        // ---- Dugme ----
         public static Button NapraviDugme(string tekst, Color boja, int sirina = 105)
         {
             var btn = new Button
@@ -90,7 +80,6 @@ namespace OsiguranjApp.Forme
             return btn;
         }
 
-        // ---- Naslov panel ----
         public static Panel NapraviNaslov(string tekst)
         {
             var pnl = new Panel
@@ -110,7 +99,6 @@ namespace OsiguranjApp.Forme
             return pnl;
         }
 
-        // ---- Boja statusa ----
         public static Color StatusBoja(string? status) => status switch
         {
             "AKTIVAN"    or "AKTIVNA"    or "ISPLACENA"   => Zelena,
@@ -121,7 +109,6 @@ namespace OsiguranjApp.Forme
             _                                             => Siva
         };
 
-        // ---- Red u TableLayoutPanel ----
         public static TextBox DodajRed(TableLayoutPanel tbl, int red, string labelTekst)
         {
             tbl.Controls.Add(new Label
@@ -164,7 +151,6 @@ namespace OsiguranjApp.Forme
             return dtp;
         }
 
-        // ---- Standardni layout ----
         public static TableLayoutPanel NapraviLayout(int rows)
         {
             var tbl = new TableLayoutPanel
@@ -181,7 +167,6 @@ namespace OsiguranjApp.Forme
             return tbl;
         }
 
-        // ---- Panel sa dugmadima Sacuvaj/Odustani ----
         public static (Button btnOk, Button btnCancel) DodajDugmadPanel(
             TableLayoutPanel tbl, int red,
             string tekstOk = "✔  Sačuvaj",

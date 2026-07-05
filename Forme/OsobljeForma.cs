@@ -121,9 +121,6 @@ namespace OsiguranjApp.Forme
         }
     }
 
-    // ----------------------------------------------------------------
-    //  DESIGNER
-    // ----------------------------------------------------------------
     partial class OsobljeForma
     {
         private System.ComponentModel.IContainer? components = null;

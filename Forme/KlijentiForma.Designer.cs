@@ -17,10 +17,8 @@ namespace OsiguranjApp.Forme
         {
             this.SuspendLayout();
 
-            // Naslov
             var naslov = UiHelper.NapraviNaslov("👤  Upravljanje klijentima");
 
-            // Toolbar
             var pnlToolbar = new Panel
             {
                 BackColor = Color.White, Dock = DockStyle.Top,
@@ -60,14 +58,12 @@ namespace OsiguranjApp.Forme
                 btnIzmeni, btnObrisi, btnOsvezi, lblBroj
             });
 
-            // Split container
             var split = new SplitContainer
             {
                 Dock = DockStyle.Fill, SplitterDistance = 680,
                 BorderStyle = BorderStyle.None
             };
 
-            // Grid
             dgvKlijenti = new DataGridView { Dock = DockStyle.Fill };
             UiHelper.StilizirajGrid(dgvKlijenti);
             dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId",      HeaderText = "ID",                  Visible = false });
@@ -82,7 +78,6 @@ namespace OsiguranjApp.Forme
             split.Panel1.Controls.Add(dgvKlijenti);
             split.Panel1.Padding = new Padding(8, 4, 4, 8);
 
-            // Detalji
             var pnlDet = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(16) };
             lblDetaljiNaziv = new Label
             {
@@ -105,7 +100,6 @@ namespace OsiguranjApp.Forme
             this.Controls.Add(pnlToolbar);
             this.Controls.Add(naslov);
 
-            // Forma
             this.BackColor = UiHelper.PozadinaForm;
             this.Font      = new Font("Segoe UI", 9F);
             this.Size      = new Size(1150, 700);

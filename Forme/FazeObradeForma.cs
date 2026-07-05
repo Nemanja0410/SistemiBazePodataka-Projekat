@@ -26,10 +26,8 @@ namespace OsiguranjApp.Forme
             this.Font            = new Font("Segoe UI", 9f);
             this.BackColor       = UiHelper.PozadinaForm;
 
-            // Naslov
             var naslov = UiHelper.NapraviNaslov($"📋  Faze obrade — {_steta.BrojStete}");
 
-            // Grid
             dgvFaze = new DataGridView { Dock = DockStyle.Fill };
             UiHelper.StilizirajGrid(dgvFaze);
             dgvFaze.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Br.",               FillWeight = 5  });
@@ -40,7 +38,6 @@ namespace OsiguranjApp.Forme
             dgvFaze.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Odluka",            FillWeight = 14 });
             dgvFaze.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Dokumentacija",     FillWeight = 20 });
 
-            // Dugmad
             var pnlBtn = new Panel
             {
                 Dock      = DockStyle.Bottom,
@@ -93,7 +90,6 @@ namespace OsiguranjApp.Forme
             var f = new DodajFazuForma(_steta.StetaId, _steta.FazeObrade.Count + 1);
             if (f.ShowDialog() == DialogResult.OK)
             {
-                // Osveži podatke iz baze
                 var osvezen = DTOManager.vratiStetu(_steta.StetaId);
                 _steta.FazeObrade.Clear();
                 foreach (var faza in osvezen.FazeObrade)

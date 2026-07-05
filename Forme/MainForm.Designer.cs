@@ -26,7 +26,6 @@ namespace OsiguranjApp
             this.pnlMenu.SuspendLayout();
             this.SuspendLayout();
 
-            // pnlMenu
             this.pnlMenu.BackColor = Color.FromArgb(30, 64, 103);
             this.pnlMenu.Dock      = DockStyle.Top;
             this.pnlMenu.Height    = 60;
@@ -36,14 +35,12 @@ namespace OsiguranjApp
                 this.btnStete, this.btnOsoblje, this.btnIzvestaji
             });
 
-            // lblNaslov
             this.lblNaslov.AutoSize  = true;
             this.lblNaslov.Font      = new Font("Segoe UI", 13F);
             this.lblNaslov.ForeColor = Color.White;
             this.lblNaslov.Location  = new Point(14, 16);
             this.lblNaslov.Text      = "Osiguravajuća kompanija";
 
-            // dugmad
             int x = 310;
             KonfBtnMeni(this.btnKlijenti,  ref x, "👤  Klijenti");
             KonfBtnMeni(this.btnPolise,    ref x, "📋  Polise");
@@ -57,7 +54,6 @@ namespace OsiguranjApp
             this.btnOsoblje.Click   += btnOsoblje_Click;
             this.btnIzvestaji.Click += btnIzvestaji_Click;
 
-            // MainForm
             this.BackColor      = Color.FromArgb(240, 242, 245);
             this.ClientSize     = new Size(1280, 800);
             this.Font           = new Font("Segoe UI", 9F);

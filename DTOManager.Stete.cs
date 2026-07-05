@@ -11,9 +11,6 @@ namespace OsiguranjApp
 {
     public partial class DTOManager
     {
-        // ============================================================
-        //  STETE
-        // ============================================================
 
         public static List<StetaPregled> vratiSveStete(string? vrsta = null, string? status = null)
         {
@@ -129,9 +126,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ============================================================
-        //  FAZE OBRADE
-        // ============================================================
 
         public static void dodajFazuObrade(FazaObradeBasic dto)
         {
@@ -158,9 +152,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ============================================================
-        //  VOZILA
-        // ============================================================
 
         public static List<VoziloBasic> vratiSvaVozila()
         {
@@ -200,7 +191,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ---- privatni helper ----
         private static StetaPregled mapStetaPregled(Steta st)
         {
             return new StetaPregled

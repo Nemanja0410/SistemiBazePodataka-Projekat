@@ -39,7 +39,6 @@ namespace OsiguranjApp.Forme
             txtNaziv   = UiHelper.DodajRed(tbl, 0, "Naziv faze *:");
             dtpPocetka = UiHelper.DodajDTPRed(tbl, 1, "Datum početka *:");
 
-            // CheckBox za završenost — zauzima obe kolone
             chkZavrsena = new CheckBox
             {
                 Text = "Faza je završena",

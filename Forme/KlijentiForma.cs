@@ -13,7 +13,6 @@ namespace OsiguranjApp.Forme
             this.Load += (s, e) => this.BeginInvoke(new Action(ucitajKlijente));
         }
 
-        // ---- učitavanje ----
         private void ucitajKlijente()
         {
             try
@@ -56,7 +55,6 @@ namespace OsiguranjApp.Forme
         private KlijentPregled? odabraniKlijent() =>
             dgvKlijenti.CurrentRow?.Tag as KlijentPregled;
 
-        // ---- event handleri ----
         private void txtPretraga_TextChanged(object sender, EventArgs e) => ucitajKlijente();
         private void cmbTip_SelectedIndexChanged(object sender, EventArgs e) => ucitajKlijente();
         private void btnOsvezi_Click(object sender, EventArgs e) => ucitajKlijente();

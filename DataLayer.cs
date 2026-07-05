@@ -29,17 +29,10 @@ namespace OsiguranjApp
         {
             try
             {
-                // LOKALNO TESTIRANJE (Docker Oracle XE) - PRE PUSH-a NA FAKULTET vratiti na gislab konekciju!
                 var cfg = OracleManagedDataClientConfiguration.Oracle10
                     .ConnectionString(c => c.Is(
                         "Data Source=localhost:1521/XEPDB1;" +
                         "User Id=S00000;Password=S00000;"));
-
-                // ORIGINAL (fakultetski server) - IZMENITI: zameniti S00000 vasim brojem indeksa (npr. S11000)
-                // var cfg = OracleManagedDataClientConfiguration.Oracle10
-                //     .ConnectionString(c => c.Is(
-                //         "Data Source=gislab-oracle.elfak.ni.ac.rs:1521/SBP_PDB;" +
-                //         "User Id=S00000;Password=S00000;"));
 
                 return Fluently.Configure()
                     .Database(cfg)

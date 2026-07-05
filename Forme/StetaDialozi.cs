@@ -5,9 +5,6 @@ using OsiguranjApp.DTOs;
 
 namespace OsiguranjApp.Forme
 {
-    // ================================================================
-    //  DODAJ STETU
-    // ================================================================
     public class DodajSteteForma : Form
     {
         private TextBox       txtBroj = null!, txtOpis = null!, txtLokacija = null!, txtIznos = null!;
@@ -113,9 +110,6 @@ namespace OsiguranjApp.Forme
         }
     }
 
-    // ================================================================
-    //  IZMENI STETU
-    // ================================================================
     public class IzmeniSteteForma : Form
     {
         private readonly StetaBasic _steta;

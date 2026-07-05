@@ -11,9 +11,6 @@ namespace OsiguranjApp
 {
     public partial class DTOManager
     {
-        // ============================================================
-        //  KLIJENTI
-        // ============================================================
 
         public static List<KlijentPregled> vratiSveKlijente()
         {
@@ -165,7 +162,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ---- privatni helper ----
         private static KlijentPregled mapKlijentPregled(Klijent k)
         {
             if (k is FizickoLice fl)

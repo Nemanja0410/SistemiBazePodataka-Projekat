@@ -41,9 +41,6 @@ namespace OsiguranjApp.Forme
             this.Controls.Add(naslov);
         }
 
-        // ----------------------------------------------------------------
-        //  TAB 1 — Polise po tipu
-        // ----------------------------------------------------------------
         private TabPage KreirajTabPolise()
         {
             var tp  = new TabPage("  📋  Polise po tipu  ");
@@ -67,9 +64,6 @@ namespace OsiguranjApp.Forme
             return tp;
         }
 
-        // ----------------------------------------------------------------
-        //  TAB 2 — Štete po vrsti i statusu
-        // ----------------------------------------------------------------
         private TabPage KreirajTabStete()
         {
             var tp   = new TabPage("  ⚠️  Štete  ");
@@ -104,9 +98,6 @@ namespace OsiguranjApp.Forme
             return tp;
         }
 
-        // ----------------------------------------------------------------
-        //  TAB 3 — Agenti
-        // ----------------------------------------------------------------
         private TabPage KreirajTabAgenti()
         {
             var tp  = new TabPage("  👤  Agenti  ");
@@ -131,9 +122,6 @@ namespace OsiguranjApp.Forme
             return tp;
         }
 
-        // ----------------------------------------------------------------
-        //  Punjenje podataka
-        // ----------------------------------------------------------------
         private void UcitajSveTabove()
         {
             UcitajPolise();
@@ -248,9 +236,6 @@ namespace OsiguranjApp.Forme
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
 
-        // ----------------------------------------------------------------
-        //  Export CSV
-        // ----------------------------------------------------------------
         private void ExportujGrid(DataGridView dgv, string naziv)
         {
             using var sfd = new SaveFileDialog
@@ -289,9 +274,6 @@ namespace OsiguranjApp.Forme
             }
         }
 
-        // ----------------------------------------------------------------
-        //  Helpers
-        // ----------------------------------------------------------------
         private DataGridView NapraviGrid()
         {
             var dgv = new DataGridView { Dock = DockStyle.Fill };

@@ -125,9 +125,6 @@ namespace OsiguranjApp.Forme
         }
     }
 
-    // ----------------------------------------------------------------
-    //  DESIGNER
-    // ----------------------------------------------------------------
     partial class SteteForma
     {
         private System.ComponentModel.IContainer? components = null;

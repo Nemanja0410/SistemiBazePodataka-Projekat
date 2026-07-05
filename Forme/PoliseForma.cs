@@ -129,9 +129,6 @@ namespace OsiguranjApp.Forme
         }
     }
 
-    // ----------------------------------------------------------------
-    //  DESIGNER
-    // ----------------------------------------------------------------
     partial class PoliseForma
     {
         private System.ComponentModel.IContainer? components = null;

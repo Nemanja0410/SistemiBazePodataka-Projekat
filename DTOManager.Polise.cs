@@ -11,9 +11,6 @@ namespace OsiguranjApp
 {
     public partial class DTOManager
     {
-        // ============================================================
-        //  POLISE
-        // ============================================================
 
         public static List<PolisaPregled> vratiSvePolise(string? tip = null, string? status = null)
         {
@@ -120,7 +117,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ---- privatni helper ----
         private static PolisaPregled mapPolisaPregled(Polisa p)
         {
             return new PolisaPregled

@@ -1,19 +1,4 @@
--- ============================================================
---  BAZA PODATAKA: OSIGURAVAJUCA KOMPANIJA
---  Uskladjeno sa NHibernate/FluentNHibernate projektom v3
---  
---  RAZLIKE u odnosu na prvu skriptu:
---  1. GENERATED ALWAYS AS IDENTITY zamenjeno sa SEQUENCE-ovima
---     (NHibernate zahteva eksplicitne sequence-ove)
---  2. Kolona limit_pokric_a preimenovana u LIMIT_POKRICA
---     (izbjegavanje specijalnih znakova u imenima kolona)
---  3. Dodata tabela OBLAST_PROCENE (nedostajala je OBLAST_ID_SEQ)
---  4. Dodate sve SEQUENCE-ove koje mapiranja koriste
--- ============================================================
 
--- ============================================================
--- SEKCIJA 1: BRISANJE POSTOJECIH OBJEKATA
--- ============================================================
 
 BEGIN
   FOR t IN (SELECT table_name FROM user_tables) LOOP
@@ -29,10 +14,6 @@ BEGIN
 END;
 /
 
--- ============================================================
--- SEKCIJA 2: SEQUENCE-OVI
--- (NHibernate GeneratedBy.Sequence() zahteva eksplicitne seq)
--- ============================================================
 
 CREATE SEQUENCE KLIJENT_ID_SEQ         START WITH 1   INCREMENT BY 1 NOCACHE NOCYCLE;
 CREATE SEQUENCE KONTAKT_ID_SEQ         START WITH 1   INCREMENT BY 1 NOCACHE NOCYCLE;
@@ -51,13 +32,7 @@ CREATE SEQUENCE PROCENA_ID_SEQ         START WITH 1   INCREMENT BY 1 NOCACHE NOC
 CREATE SEQUENCE OSTECENIPREDMET_ID_SEQ START WITH 1   INCREMENT BY 1 NOCACHE NOCYCLE;
 CREATE SEQUENCE OSTECENOLICE_ID_SEQ    START WITH 1   INCREMENT BY 1 NOCACHE NOCYCLE;
 
--- ============================================================
--- SEKCIJA 3: KREIRANJE TABELA
--- ============================================================
 
--- ------------------------------------------------------------
--- 3.1 KLIJENTI
--- ------------------------------------------------------------
 
 CREATE TABLE KLIJENT (
     klijent_id        NUMBER          DEFAULT KLIJENT_ID_SEQ.NEXTVAL PRIMARY KEY,
@@ -113,9 +88,6 @@ CREATE TABLE KONTAKT_OSOBA (
         REFERENCES KLIJENT(klijent_id) ON DELETE CASCADE
 );
 
--- ------------------------------------------------------------
--- 3.2 OSOBLJE
--- ------------------------------------------------------------
 
 CREATE TABLE OSOBLJE (
     osoblje_id        NUMBER          DEFAULT OSOBLJE_ID_SEQ.NEXTVAL PRIMARY KEY,
@@ -177,9 +149,6 @@ CREATE TABLE PRAVNIK (
         REFERENCES OSOBLJE(osoblje_id) ON DELETE CASCADE
 );
 
--- ------------------------------------------------------------
--- 3.3 POLISE
--- ------------------------------------------------------------
 
 CREATE TABLE POLISA (
     polisa_id         NUMBER          DEFAULT POLISA_ID_SEQ.NEXTVAL PRIMARY KEY,
@@ -341,8 +310,6 @@ CREATE TABLE DODATNO_POKRICE (
     polisa_id         NUMBER          NOT NULL,
     naziv             VARCHAR2(150)   NOT NULL,
     opis              VARCHAR2(500),
-    -- Promenjen naziv kolone: limit_pokrica (bez specijalnog znaka)
-    -- u mapiranju je: Map(x => x.LimitPokrića).Column("LIMIT_POKRICA")
     limit_pokrica     NUMBER(15,2),
     fransiza          NUMBER(15,2)    DEFAULT 0,
     dodatna_premija   NUMBER(15,2)    NOT NULL
@@ -365,9 +332,6 @@ CREATE TABLE ISTORIJA_POLISE (
         REFERENCES OSOBLJE(osoblje_id)
 );
 
--- ------------------------------------------------------------
--- 3.4 STETE
--- ------------------------------------------------------------
 
 CREATE TABLE STETA (
     steta_id          NUMBER          DEFAULT STETA_ID_SEQ.NEXTVAL PRIMARY KEY,
@@ -482,9 +446,6 @@ CREATE TABLE PROCENA_STETE (
         REFERENCES PROCENITELJ(osoblje_id)
 );
 
--- ============================================================
--- SEKCIJA 4: INDEKSI
--- ============================================================
 
 CREATE INDEX idx_polisa_tip      ON POLISA(tip_osiguranja);
 CREATE INDEX idx_polisa_status   ON POLISA(status);
@@ -497,9 +458,6 @@ CREATE INDEX idx_klijent_tip     ON KLIJENT(tip_klijenta);
 CREATE INDEX idx_vozilo_reg      ON VOZILO(registracija);
 CREATE INDEX idx_faza_steta      ON FAZA_OBRADE(steta_id);
 
--- ============================================================
--- SEKCIJA 5: KORISNI VIEW-OVI
--- ============================================================
 
 CREATE OR REPLACE VIEW V_AKTIVNE_POLISE AS
 SELECT
@@ -552,11 +510,7 @@ WHERE p.status = 'AKTIVNA'
   AND p.datum_isteka BETWEEN SYSDATE AND SYSDATE + 30
 ORDER BY p.datum_isteka;
 
--- ============================================================
--- SEKCIJA 6: SAMPLE PODACI
--- ============================================================
 
--- Klijenti - fizicka lica
 INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('Petar Petrovic', 'Bulevar oslobodjenja 15, Nis', '064-111-2233', 'petar.petrovic@gmail.com', 'AKTIVAN', 'FIZICKO_LICE');
 
@@ -570,7 +524,6 @@ INSERT INTO FIZICKO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL - 2, '1501985710011', DA
 INSERT INTO FIZICKO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL - 1, '2203990725022', DATE '1990-03-22', 'Lekar');
 INSERT INTO FIZICKO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL,     '0809978710033', DATE '1978-09-08', 'Profesor');
 
--- Klijent - pravno lice
 INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('TechSolutions d.o.o.', 'Bulevar Nikole Tesle 5, Nis', '018-555-1234', 'office@techsol.rs', 'AKTIVAN', 'PRAVNO_LICE');
 
@@ -578,13 +531,11 @@ INSERT INTO PRAVNO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL, '100123456', '12345678',
 
 COMMIT;
 
--- Osoblje - agent
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Marko', 'Dimitrijevic', '1503985710066', 'Partizanska 12, Nis', '064-300-1122', 'm.dimit@osig.rs', DATE '2018-03-01', 'AKTIVAN', 'AGENT');
 
 INSERT INTO AGENT VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'INTERNI', 'AG-NIS-001', 'Nis i okolina', 7.50);
 
--- Osoblje - procenitelj
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Zoran', 'Stankovic', '1204975710088', 'Cara Lazara 7, Kragujevac', '065-500-3344', 'z.stan@osig.rs', DATE '2015-01-10', 'AKTIVAN', 'PROCENITELJ');
 
@@ -592,7 +543,6 @@ INSERT INTO PROCENITELJ VALUES (OSOBLJE_ID_SEQ.CURRVAL);
 INSERT INTO OBLAST_PROCENE (osoblje_id, oblast) VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'VOZILO');
 INSERT INTO OBLAST_PROCENE (osoblje_id, oblast) VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'IMOVINA');
 
--- Osoblje - lekar
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Ana', 'Ristic', '3101988725099', 'Zeleni bulevar 22, Nis', '060-600-4455', 'a.ristic@osig.rs', DATE '2019-09-01', 'AKTIVAN', 'LEKAR');
 
@@ -600,11 +550,9 @@ INSERT INTO LEKAR VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'Opsta medicina', 'LIC-MED-001
 
 COMMIT;
 
--- Vozilo
 INSERT INTO VOZILO (registracija, marka, model, godina_proizvodnje, vlasnik_id)
 VALUES ('NI-123-AB', 'Volkswagen', 'Golf 7', 2018, 1);
 
--- Polisa - auto
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-AUTO-2025-001', 'AUTO', DATE '2025-01-01', DATE '2026-01-01',
@@ -612,7 +560,6 @@ VALUES ('POL-AUTO-2025-001', 'AUTO', DATE '2025-01-01', DATE '2026-01-01',
 
 INSERT INTO AUTO_OSIGURANJE VALUES (POLISA_ID_SEQ.CURRVAL, VOZILO_ID_SEQ.CURRVAL, 'B5', 'SRBIJA');
 
--- Polisa - zdravstveno
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-ZDRA-2025-001', 'ZDRAVSTVENO', DATE '2025-01-01', DATE '2026-01-01',
@@ -623,7 +570,6 @@ INSERT INTO ZDRAVSTVENO_OSIGURANJE VALUES (POLISA_ID_SEQ.CURRVAL,
 
 COMMIT;
 
--- Steta
 INSERT INTO STETA (broj_stete, datum_nastanka, polisa_id, podnosilac_id,
     vrsta_stete, opis_dogadjaja, lokacija, status, procenjeni_iznos, agent_id)
 VALUES ('STE-AUT-2025-001', DATE '2025-03-15',
@@ -639,11 +585,7 @@ VALUES (STETA_ID_SEQ.CURRVAL, 1, 'Prijem prijave', DATE '2025-03-15', 1, 'ODOBRE
 
 COMMIT;
 
--- ------------------------------------------------------------
--- Dodatni sample podaci (Klijenti, Osoblje, Polise, Stete)
--- ------------------------------------------------------------
 
--- ---- Klijenti: fizicka lica ----
 INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('Jovana Ilic', 'Knez Mihailova 44, Beograd', '064-222-3344', 'jovana.ilic@gmail.com', 'AKTIVAN', 'FIZICKO_LICE');
 INSERT INTO FIZICKO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL, '1002992710099', DATE '1992-01-10', 'Advokat');
@@ -656,7 +598,6 @@ INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('Ana Kovacevic', 'Kralja Petra 8, Novi Sad', '063-444-5522', 'ana.kovacevic@mail.com', 'AKTIVAN', 'FIZICKO_LICE');
 INSERT INTO FIZICKO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL, '2207995710055', DATE '1995-07-22', 'Nastavnik');
 
--- ---- Klijenti: pravna lica ----
 INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('AutoServis Beograd d.o.o.', 'Zorana Djindjica 100, Beograd', '011-333-2211', 'office@autoservisbg.rs', 'AKTIVAN', 'PRAVNO_LICE');
 INSERT INTO PRAVNO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL, '100223344', '20334455', 'Servis vozila');
@@ -669,7 +610,6 @@ INSERT INTO PRAVNO_LICE VALUES (KLIJENT_ID_SEQ.CURRVAL, '100556677', '30556677',
 INSERT INTO KONTAKT_OSOBA (klijent_id, ime, prezime, telefon, email, funkcija)
 VALUES (KLIJENT_ID_SEQ.CURRVAL, 'Milica', 'Radovic', '064-200-3000', 'milica.radovic@mediplus.rs', 'Menadzer');
 
--- ---- Klijenti: javna institucija ----
 INSERT INTO KLIJENT (naziv, adresa, telefon, email, status, tip_klijenta)
 VALUES ('Opstina Nis', 'Trg kralja Milana 1, Nis', '018-501-000', 'info@nis.rs', 'AKTIVAN', 'JAVNA_INSTITUCIJA');
 INSERT INTO JAVNA_INSTITUCIJA VALUES (KLIJENT_ID_SEQ.CURRVAL, '100778899', '40778899', 'Lokalna samouprava', 'OPSTINSKA');
@@ -678,7 +618,6 @@ VALUES (KLIJENT_ID_SEQ.CURRVAL, 'Vladimir', 'Jankovic', '064-300-4000', 'vladimi
 
 COMMIT;
 
--- ---- Osoblje: agenti ----
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Jelena', 'Petrovic', '1509990710011', 'Njegoseva 5, Beograd', '064-500-1111', 'j.petrovic@osig.rs', DATE '2019-04-15', 'AKTIVAN', 'AGENT');
 INSERT INTO AGENT VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'INTERNI', 'AG-BG-002', 'Beograd i okolina', 6.00);
@@ -687,19 +626,16 @@ INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovan
 VALUES ('Nemanja', 'Djordjevic', '2108988710022', 'Bulevar Evrope 10, Novi Sad', '065-600-2222', 'n.djordjevic@osig.rs', DATE '2020-06-01', 'AKTIVAN', 'AGENT');
 INSERT INTO AGENT VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'EKSTERNI', 'AG-NS-003', 'Novi Sad i Vojvodina', 8.50);
 
--- ---- Osoblje: procenitelj ----
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Milan', 'Vasic', '0312982710033', 'Cara Dusana 15, Krusevac', '066-700-3333', 'm.vasic@osig.rs', DATE '2017-09-10', 'AKTIVAN', 'PROCENITELJ');
 INSERT INTO PROCENITELJ VALUES (OSOBLJE_ID_SEQ.CURRVAL);
 INSERT INTO OBLAST_PROCENE (osoblje_id, oblast) VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'ZDRAVSTVO');
 INSERT INTO OBLAST_PROCENE (osoblje_id, oblast) VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'SPECIJALNE_STETE');
 
--- ---- Osoblje: lekar ----
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Snezana', 'Popovic', '1409985710044', 'Kosovke devojke 3, Nis', '060-800-4444', 's.popovic@osig.rs', DATE '2021-02-20', 'AKTIVAN', 'LEKAR');
 INSERT INTO LEKAR VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'Ortopedija', 'LIC-MED-002');
 
--- ---- Osoblje: pravnici ----
 INSERT INTO OSOBLJE (ime, prezime, jmbg, adresa, telefon, email, datum_angazovanja, status, tip_osoblja)
 VALUES ('Aleksandar', 'Jovanovic', '0805980710055', 'Generala Milojka Lesjanina 2, Nis', '063-900-5555', 'a.jovanovic@osig.rs', DATE '2016-03-01', 'AKTIVAN', 'PRAVNIK');
 INSERT INTO PRAVNIK VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'INTERNI', 'BAR-2016-123');
@@ -710,7 +646,6 @@ INSERT INTO PRAVNIK VALUES (OSOBLJE_ID_SEQ.CURRVAL, 'EKSTERNI', 'BAR-2022-456');
 
 COMMIT;
 
--- ---- Vozila ----
 INSERT INTO VOZILO (registracija, marka, model, godina_proizvodnje, vlasnik_id)
 VALUES ('BG-456-CD', 'Toyota', 'Corolla', 2020, (SELECT klijent_id FROM KLIJENT WHERE naziv = 'Jovana Ilic'));
 
@@ -720,7 +655,6 @@ VALUES ('NI-789-EF', 'Skoda', 'Octavia', 2019, (SELECT klijent_id FROM KLIJENT W
 INSERT INTO VOZILO (registracija, marka, model, godina_proizvodnje, vlasnik_id)
 VALUES ('NS-321-GH', 'Renault', 'Clio', 2021, (SELECT klijent_id FROM KLIJENT WHERE naziv = 'Ana Kovacevic'));
 
--- ---- Nekretnine ----
 INSERT INTO NEKRETNINA (adresa, tip_objekta, povrsina, godina_izgradnje, procenjena_vrednost)
 VALUES ('Bulevar Nikole Tesle 5, Nis', 'POSLOVNI_PROSTOR', 250, 2015, 15000000);
 
@@ -732,7 +666,6 @@ VALUES ('Svetozara Markovica 22, Kragujevac', 'KUCA', 140, 1998, 12000000);
 
 COMMIT;
 
--- ---- Polise: auto (2 nove) ----
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-AUTO-2025-002', 'AUTO', DATE '2025-02-01', DATE '2026-02-01',
@@ -751,7 +684,6 @@ VALUES ('POL-AUTO-2025-003', 'AUTO', DATE '2025-03-10', DATE '2026-03-10',
 INSERT INTO AUTO_OSIGURANJE VALUES (POLISA_ID_SEQ.CURRVAL,
     (SELECT vozilo_id FROM VOZILO WHERE registracija = 'NS-321-GH'), 'B7', 'EVROPA');
 
--- ---- Polise: zdravstveno (1 nova) ----
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-ZDRA-2025-002', 'ZDRAVSTVENO', DATE '2025-01-15', DATE '2026-01-15',
@@ -761,7 +693,6 @@ VALUES ('POL-ZDRA-2025-002', 'ZDRAVSTVENO', DATE '2025-01-15', DATE '2026-01-15'
 INSERT INTO ZDRAVSTVENO_OSIGURANJE VALUES (POLISA_ID_SEQ.CURRVAL,
     'Klinicki centar Beograd', 180000, 90000, 600000, 9000);
 
--- ---- Polise: zivotno (2 nove) ----
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-ZIVO-2025-001', 'ZIVOTNO', DATE '2025-01-01', DATE '2035-01-01',
@@ -784,7 +715,6 @@ VALUES (POLISA_ID_SEQ.CURRVAL, (SELECT klijent_id FROM KLIJENT WHERE naziv = 'Jo
 INSERT INTO KORISNIK_ISPLATE (polisa_id, klijent_id, procenat_udela)
 VALUES (POLISA_ID_SEQ.CURRVAL, (SELECT klijent_id FROM KLIJENT WHERE naziv = 'Stefan Nikolic'), 50);
 
--- ---- Polise: imovinsko (2 nove) ----
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-IMOV-2025-001', 'IMOVINSKO', DATE '2025-01-01', DATE '2026-01-01',
@@ -805,7 +735,6 @@ INSERT INTO IMOVINSKO_OSIGURANJE VALUES (POLISA_ID_SEQ.CURRVAL, 'Pozar, oluja');
 INSERT INTO POLISA_NEKRETNINA (polisa_id, nekretnina_id)
 VALUES (POLISA_ID_SEQ.CURRVAL, (SELECT nekretnina_id FROM NEKRETNINA WHERE adresa = 'Cara Dusana 8, Beograd'));
 
--- ---- Polise: putno (2 nove) ----
 INSERT INTO POLISA (broj_polise, tip_osiguranja, datum_pocetka, datum_isteka,
     osnovna_premija, valuta, nacin_placanja, agent_id, ugovarac_id)
 VALUES ('POL-PUTO-2025-001', 'PUTNO', DATE '2025-06-01', DATE '2025-06-15',
@@ -828,7 +757,6 @@ VALUES (POLISA_ID_SEQ.CURRVAL, (SELECT klijent_id FROM KLIJENT WHERE naziv = 'An
 
 COMMIT;
 
--- ---- Dodatna pokrica i istorija (na jednu postojecu polisu) ----
 INSERT INTO DODATNO_POKRICE (polisa_id, naziv, opis, limit_pokrica, fransiza, dodatna_premija)
 VALUES ((SELECT polisa_id FROM POLISA WHERE broj_polise = 'POL-AUTO-2025-002'),
     'Asistencija na putu', 'Sirom Evrope, 24/7', 500000, 0, 1500);
@@ -840,7 +768,6 @@ VALUES ((SELECT polisa_id FROM POLISA WHERE broj_polise = 'POL-AUTO-2025-002'),
 
 COMMIT;
 
--- ---- Stete: auto (1 nova) ----
 INSERT INTO STETA (broj_stete, datum_nastanka, polisa_id, podnosilac_id,
     vrsta_stete, opis_dogadjaja, lokacija, status, procenjeni_iznos, agent_id)
 VALUES ('STE-AUT-2025-002', DATE '2025-04-10',
@@ -864,7 +791,6 @@ VALUES (STETA_ID_SEQ.CURRVAL, DATE '2025-04-12',
     (SELECT osoblje_id FROM OSOBLJE WHERE ime = 'Milan' AND prezime = 'Vasic'),
     'Vizuelni pregled', 'Ostecenje prednjeg branika, potrebna zamena', 25000, 'Isplatiti puni iznos');
 
--- ---- Stete: zdravstvena (1 nova) ----
 INSERT INTO STETA (broj_stete, datum_nastanka, polisa_id, podnosilac_id,
     vrsta_stete, opis_dogadjaja, lokacija, status, procenjeni_iznos)
 VALUES ('STE-ZDR-2025-001', DATE '2025-03-20',
@@ -879,7 +805,6 @@ INSERT INTO FAZA_OBRADE (steta_id, redni_broj_faze, naziv_faze, datum_pocetka, d
     odluka, dokumentacija)
 VALUES (STETA_ID_SEQ.CURRVAL, 1, 'Prijem prijave', DATE '2025-03-20', DATE '2025-03-21', 'ODOBRENA', 'Prijavni formular');
 
--- ---- Stete: imovinska (1 nova) ----
 INSERT INTO STETA (broj_stete, datum_nastanka, polisa_id, podnosilac_id,
     vrsta_stete, opis_dogadjaja, lokacija, status, procenjeni_iznos)
 VALUES ('STE-IMO-2025-001', DATE '2025-05-05',
@@ -896,22 +821,13 @@ VALUES (STETA_ID_SEQ.CURRVAL, 1, 'Prijem prijave', DATE '2025-05-05', 'U_TOKU', 
 
 COMMIT;
 
--- ============================================================
--- SEKCIJA 7: VERIFIKACIJA
--- ============================================================
 
--- Broj tabela
 SELECT COUNT(*) AS broj_tabela FROM USER_TABLES;
 
--- Broj sequence-ova
 SELECT COUNT(*) AS broj_sekvenci FROM USER_SEQUENCES;
 
--- Provera da li su podaci uneseni
 SELECT 'KLIJENTI'   AS tabela, COUNT(*) AS broj FROM KLIJENT   UNION ALL
 SELECT 'POLISE',              COUNT(*)          FROM POLISA    UNION ALL
 SELECT 'OSOBLJE',             COUNT(*)          FROM OSOBLJE   UNION ALL
 SELECT 'STETE',               COUNT(*)          FROM STETA;
 
--- ============================================================
--- KRAJ
--- ============================================================

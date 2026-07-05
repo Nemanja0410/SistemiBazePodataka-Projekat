@@ -11,9 +11,6 @@ namespace OsiguranjApp
 {
     public partial class DTOManager
     {
-        // ============================================================
-        //  OSOBLJE
-        // ============================================================
 
         public static List<OsobljePregled> vratiSveOsoblje(string? tip = null)
         {
@@ -164,7 +161,6 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        // ---- privatni helper ----
         private static OsobljePregled mapOsobljePregled(Osoblje o)
         {
             if (o is Agent a)
