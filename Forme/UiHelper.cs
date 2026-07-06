@@ -1,3 +1,4 @@
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -62,6 +63,17 @@ namespace OsiguranjApp.Forme
             dgv.DefaultCellStyle.SelectionForeColor = Color.White;
 
             dgv.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 250, 252);
+        }
+
+        public static void PoravnajTraku(int pocetnoX, params Control[] kontrole)
+        {
+            int x = pocetnoX;
+            foreach (var k in kontrole)
+            {
+                if (!k.Visible) continue;
+                k.Left = x;
+                x += k.Width + 6;
+            }
         }
 
         public static Button NapraviDugme(string tekst, Color boja, int sirina = 105)
@@ -165,6 +177,20 @@ namespace OsiguranjApp.Forme
             for (int i = 0; i < rows; i++)
                 tbl.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
             return tbl;
+        }
+
+        public static bool PokusajAkciju(Action akcija)
+        {
+            try
+            {
+                akcija();
+                return true;
+            }
+            catch (NeovlascenPristupException ex)
+            {
+                MessageBox.Show(ex.Message, "Pristup odbijen", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
         }
 
         public static (Button btnOk, Button btnCancel) DodajDugmadPanel(

@@ -21,7 +21,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = "Dodaj fizičko lice";
-            this.Size            = new Size(450, 400);
+            this.Size            = new Size(450, 430);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -71,7 +71,7 @@ namespace OsiguranjApp.Forme
                 TipKlijenta   = "FIZICKO_LICE"
             };
 
-            DTOManager.dodajFizickoLice(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajFizickoLice(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

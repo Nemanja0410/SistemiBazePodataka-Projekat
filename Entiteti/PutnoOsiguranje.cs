@@ -5,9 +5,9 @@ namespace OsiguranjApp.Entiteti
 {
     public class PutnoOsiguranje : Polisa
     {
-        public virtual string?  Destinacije    { get; set; }
-        public virtual DateTime DatumPolaska   { get; set; }
-        public virtual DateTime DatumPovratka  { get; set; }
+        public virtual string?  Destinacije{ get; set; }
+        public virtual DateTime DatumPolaska { get; set; }
+        public virtual DateTime DatumPovratka { get; set; }
 
         public virtual IList<Klijent> OsiguranaLica { get; set; }
 

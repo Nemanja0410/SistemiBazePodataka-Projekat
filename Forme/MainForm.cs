@@ -8,6 +8,35 @@ namespace OsiguranjApp
         public MainForm()
         {
             InitializeComponent();
+            PrimeniUlogu();
+        }
+
+        private void PrimeniUlogu()
+        {
+            var nalog = SesijaKorisnik.TrenutniNalog;
+            if (nalog == null) return;
+
+            lblSesija.Text = nalog.ImeOsoblja != null
+                ? $"Ulogovan kao: {nalog.ImeOsoblja} {nalog.PrezimeOsoblja} ({nalog.Uloga})"
+                : $"Ulogovan kao: {nalog.KorisnickoIme} ({nalog.Uloga})";
+
+            bool jeAdmin = SesijaKorisnik.ImaUlogu("ADMIN");
+            btnOsoblje.Visible = jeAdmin;
+            btnNalozi.Visible  = jeAdmin;
+        }
+
+        private void btnNalozi_Click(object sender, System.EventArgs e)
+        {
+            OtvoriFormu(new UpravljanjeNalozimaForma());
+        }
+
+        private void btnOdjava_Click(object sender, System.EventArgs e)
+        {
+            if (MessageBox.Show("Odjaviti se?", "Potvrda", MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+            SesijaKorisnik.Odjava();
+            SesijaKorisnik.ZahtevZaOdjavu = true;
+            this.Close();
         }
 
         private void btnKlijenti_Click(object sender, System.EventArgs e)

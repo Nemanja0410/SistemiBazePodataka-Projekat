@@ -20,7 +20,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = "Dodaj javnu instituciju";
-            this.Size            = new Size(460, 410);
+            this.Size            = new Size(460, 470);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -75,7 +75,7 @@ namespace OsiguranjApp.Forme
                 TipKlijenta     = "JAVNA_INSTITUCIJA"
             };
 
-            DTOManager.dodajJavnuInstituciju(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajJavnuInstituciju(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

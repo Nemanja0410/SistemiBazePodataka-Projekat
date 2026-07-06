@@ -67,6 +67,7 @@ namespace OsiguranjApp
 
         public static void dodajFizickoLice(FizickoLiceBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -90,6 +91,7 @@ namespace OsiguranjApp
 
         public static void dodajPravnoLice(PravnoLiceBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -112,6 +114,7 @@ namespace OsiguranjApp
 
         public static void dodajJavnuInstituciju(JavnaInstitucijaBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -135,6 +138,7 @@ namespace OsiguranjApp
 
         public static void azurirajKlijenta(KlijentBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -151,6 +155,7 @@ namespace OsiguranjApp
 
         public static void obrisiKlijenta(int id)
         {
+            ProveriOvlascenje("ADMIN");
             try
             {
                 ISession s = DataLayer.GetSession();

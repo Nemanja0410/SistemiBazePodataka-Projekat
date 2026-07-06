@@ -4,7 +4,7 @@ namespace OsiguranjApp.Entiteti
 {
     public class PravnoLice : Klijent
     {
-        public virtual string? Pib         { get; set; }
+        public virtual string? Pib { get; set; }
         public virtual string? MaticniBroj { get; set; }
         public virtual string? Delatnost   { get; set; }
 

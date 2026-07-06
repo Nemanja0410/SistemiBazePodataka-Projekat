@@ -24,7 +24,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = $"Izmeni polisu — {_polisa.BrojPolise}";
-            this.Size            = new Size(470, 380);
+            this.Size            = new Size(470, 400);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -74,18 +74,18 @@ namespace OsiguranjApp.Forme
             cmbStatus.SelectedItem = _polisa.Status;
 
             for (int i = 0; i < cmbUgovarac.Items.Count; i++)
-                if (((ComboItem)cmbUgovarac.Items[i]).Id == _polisa.UgovaracId)
+                if ((cmbUgovarac.Items[i] as ComboItem)?.Id == _polisa.UgovaracId)
                 { cmbUgovarac.SelectedIndex = i; break; }
 
             if (_polisa.AgentId.HasValue)
                 for (int i = 0; i < cmbAgent.Items.Count; i++)
-                    if (((ComboItem)cmbAgent.Items[i]).Id == _polisa.AgentId.Value)
+                    if ((cmbAgent.Items[i] as ComboItem)?.Id == _polisa.AgentId.Value)
                     { cmbAgent.SelectedIndex = i; break; }
         }
 
         private void BtnSacuvaj_Click(object? sender, EventArgs e)
         {
-            if (((ComboItem)cmbUgovarac.SelectedItem)?.Id == 0)
+            if ((cmbUgovarac.SelectedItem as ComboItem)?.Id == 0)
             { MessageBox.Show("Izaberite ugovarača.", "Validacija"); return; }
             if (!decimal.TryParse(txtPremija.Text.Replace(",", "."),
                     System.Globalization.NumberStyles.Any,
@@ -94,7 +94,7 @@ namespace OsiguranjApp.Forme
             if (dtpIsteka.Value <= dtpPocetka.Value)
             { MessageBox.Show("Datum isteka mora biti posle početka.", "Validacija"); return; }
 
-            var agent = (ComboItem)cmbAgent.SelectedItem;
+            var agent = cmbAgent.SelectedItem as ComboItem;
             _polisa.DatumPocetka   = dtpPocetka.Value.Date;
             _polisa.DatumIsteka    = dtpIsteka.Value.Date;
             _polisa.OsnovnaPremija = prem;
@@ -103,7 +103,7 @@ namespace OsiguranjApp.Forme
             _polisa.UgovaracId     = ((ComboItem)cmbUgovarac.SelectedItem!).Id;
             _polisa.AgentId        = agent?.Id > 0 ? agent.Id : (int?)null;
 
-            DTOManager.azurirajPolisu(_polisa);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.azurirajPolisu(_polisa))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

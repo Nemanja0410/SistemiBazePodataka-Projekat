@@ -31,8 +31,8 @@ namespace OsiguranjApp
             {
                 var cfg = OracleManagedDataClientConfiguration.Oracle10
                     .ConnectionString(c => c.Is(
-                        "Data Source=localhost:1521/XEPDB1;" +
-                        "User Id=S00000;Password=S00000;"));
+                         "Data Source=gislab-oracle.elfak.ni.ac.rs:1521/SBP_PDB;" +
+                         "User Id=S19451;Password=S19451;"));
 
                 return Fluently.Configure()
                     .Database(cfg)

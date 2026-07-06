@@ -36,13 +36,13 @@ namespace OsiguranjApp.Forme
             cmbTip.SelectedIndexChanged += cmbTip_SelectedIndexChanged;
 
             int bx = 532;
-            btnDodajFizicko    = NB("➕ Fizičko lice",  UiHelper.Zelena,      130, ref bx);
-            btnDodajPravno     = NB("➕ Pravno lice",   UiHelper.Zelena,      120, ref bx);
+            btnDodajFizicko= NB("➕ Fizičko lice",  UiHelper.Zelena,      130, ref bx);
+            btnDodajPravno= NB("➕ Pravno lice",   UiHelper.Zelena,      120, ref bx);
             btnDodajInstituciju= NB("➕ Institucija",   UiHelper.Zelena,      110, ref bx);
-            btnIzmeni          = NB("✏️  Izmeni",       UiHelper.PlavaSvetla, 95,  ref bx);
-            btnObrisi          = NB("🗑️  Obriši",       UiHelper.Crvena,      90,  ref bx);
-            btnOsvezi          = NB("🔄  Osveži",       UiHelper.Siva,        88,  ref bx);
-            lblBroj            = new Label { AutoSize = true, ForeColor = UiHelper.Siva, Location = new Point(bx + 6, 13), Text = "Ukupno: 0" };
+            btnIzmeni= NB("✏️  Izmeni",       UiHelper.PlavaSvetla, 95,  ref bx);
+            btnObrisi= NB("🗑️  Obriši",       UiHelper.Crvena,      90,  ref bx);
+            btnOsvezi= NB("🔄  Osveži",       UiHelper.Siva,        88,  ref bx);
+            lblBroj= new Label { AutoSize = true, ForeColor = UiHelper.Siva, Location = new Point(bx + 6, 13), Text = "Ukupno: 0" };
 
             btnDodajFizicko.Click    += btnDodajFizicko_Click;
             btnDodajPravno.Click     += btnDodajPravno_Click;
@@ -67,12 +67,12 @@ namespace OsiguranjApp.Forme
             dgvKlijenti = new DataGridView { Dock = DockStyle.Fill };
             UiHelper.StilizirajGrid(dgvKlijenti);
             dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colId",      HeaderText = "ID",                  Visible = false });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colNaziv",   HeaderText = "Naziv / Ime",          FillWeight = 28 });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTip",     HeaderText = "Tip klijenta",         FillWeight = 18 });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTelefon", HeaderText = "Telefon",              FillWeight = 15 });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail",   HeaderText = "Email",                FillWeight = 24 });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",  HeaderText = "Status",               FillWeight = 10 });
-            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDat",     HeaderText = "Registrovan",          FillWeight = 12 });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colNaziv",   HeaderText = "Naziv / Ime",          FillWeight = 28, MinimumWidth = 140 });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTip",     HeaderText = "Tip klijenta",         FillWeight = 18, MinimumWidth = 110 });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colTelefon", HeaderText = "Telefon",              FillWeight = 15, MinimumWidth = 90  });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colEmail",   HeaderText = "Email",                FillWeight = 24, MinimumWidth = 140 });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colStatus",  HeaderText = "Status",               FillWeight = 10, MinimumWidth = 80  });
+            dgvKlijenti.Columns.Add(new DataGridViewTextBoxColumn { Name = "colDat",     HeaderText = "Registrovan",          FillWeight = 12, MinimumWidth = 100 });
             dgvKlijenti.CellDoubleClick  += dgvKlijenti_CellDoubleClick;
             dgvKlijenti.SelectionChanged += dgvKlijenti_SelectionChanged;
             split.Panel1.Controls.Add(dgvKlijenti);
@@ -101,9 +101,10 @@ namespace OsiguranjApp.Forme
             this.Controls.Add(naslov);
 
             this.BackColor = UiHelper.PozadinaForm;
-            this.Font      = new Font("Segoe UI", 9F);
-            this.Size      = new Size(1150, 700);
-            this.Text      = "Klijenti";
+            this.Font= new Font("Segoe UI", 9F);
+            this.Size= new Size(1150, 700);
+            this.MinimumSize = new Size(850, 500);
+            this.Text= "Klijenti";
 
             this.ResumeLayout(false);
         }

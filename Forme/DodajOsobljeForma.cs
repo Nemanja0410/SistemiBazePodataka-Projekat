@@ -21,7 +21,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = "Dodaj zaposlenog";
-            this.Size            = new Size(450, 450);
+            this.Size            = new Size(450, 500);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -68,11 +68,11 @@ namespace OsiguranjApp.Forme
             bool jePravnik = cmbTip.SelectedItem?.ToString() == "PRAVNIK";
             cmbTipPravnika.Visible = jePravnik;
             txtBarBroj.Visible     = jePravnik;
-            tbl.GetControlFromPosition(0, 8).Visible = jePravnik;
-            tbl.GetControlFromPosition(0, 9).Visible = jePravnik;
+            tbl.GetControlFromPosition(0, 8)!.Visible = jePravnik;
+            tbl.GetControlFromPosition(0, 9)!.Visible = jePravnik;
             tbl.RowStyles[8].Height = jePravnik ? 36 : 0;
             tbl.RowStyles[9].Height = jePravnik ? 36 : 0;
-            this.Height = jePravnik ? 450 : 378;
+            this.Height = jePravnik ? 500 : 430;
         }
 
         private void BtnSacuvaj_Click(object? sender, EventArgs e)
@@ -102,7 +102,7 @@ namespace OsiguranjApp.Forme
                 BarBroj     = jePravnik ? txtBarBroj.Text.Trim() : null
             };
 
-            DTOManager.dodajOsoblje(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajOsoblje(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

@@ -19,26 +19,26 @@ namespace OsiguranjApp.Forme
 
         private void InitializeComponent()
         {
-            this.Text            = "Dodaj pravno lice";
-            this.Size            = new Size(450, 400);
+            this.Text= "Dodaj pravno lice";
+            this.Size= new Size(450, 430);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
-            this.Font            = new Font("Segoe UI", 9f);
-            this.BackColor       = Color.White;
+            this.Font= new Font("Segoe UI", 9f);
+            this.BackColor= Color.White;
 
             var tbl = UiHelper.NapraviLayout(9);
 
-            txtNaziv     = UiHelper.DodajRed(tbl, 0, "Naziv *:");
-            txtPib       = UiHelper.DodajRed(tbl, 1, "PIB *:");
+            txtNaziv= UiHelper.DodajRed(tbl, 0, "Naziv *:");
+            txtPib= UiHelper.DodajRed(tbl, 1, "PIB *:");
             txtPib.MaxLength = 9;
-            txtMb        = UiHelper.DodajRed(tbl, 2, "Matični broj *:");
+            txtMb= UiHelper.DodajRed(tbl, 2, "Matični broj *:");
             txtMb.MaxLength = 8;
             txtDelatnost = UiHelper.DodajRed(tbl, 3, "Delatnost:");
             txtAdresa    = UiHelper.DodajRed(tbl, 4, "Adresa:");
-            txtTelefon   = UiHelper.DodajRed(tbl, 5, "Telefon:");
-            txtEmail     = UiHelper.DodajRed(tbl, 6, "Email:");
-            cmbStatus    = UiHelper.DodajComboRed(tbl, 7, "Status:");
+            txtTelefon= UiHelper.DodajRed(tbl, 5, "Telefon:");
+            txtEmail= UiHelper.DodajRed(tbl, 6, "Email:");
+            cmbStatus= UiHelper.DodajComboRed(tbl, 7, "Status:");
             cmbStatus.Items.AddRange(new[] { "AKTIVAN", "NEAKTIVAN", "BLOKIRAN" });
             cmbStatus.SelectedIndex = 0;
 
@@ -62,18 +62,18 @@ namespace OsiguranjApp.Forme
 
             var dto = new PravnoLiceBasic
             {
-                Naziv       = txtNaziv.Text.Trim(),
-                Pib         = txtPib.Text.Trim(),
+                Naziv= txtNaziv.Text.Trim(),
+                Pib= txtPib.Text.Trim(),
                 MaticniBroj = txtMb.Text.Trim(),
                 Delatnost   = txtDelatnost.Text.Trim(),
-                Adresa      = txtAdresa.Text.Trim(),
-                Telefon     = txtTelefon.Text.Trim(),
-                Email       = txtEmail.Text.Trim(),
-                Status      = cmbStatus.SelectedItem?.ToString(),
+                Adresa= txtAdresa.Text.Trim(),
+                Telefon= txtTelefon.Text.Trim(),
+                Email= txtEmail.Text.Trim(),
+                Status= cmbStatus.SelectedItem?.ToString(),
                 TipKlijenta = "PRAVNO_LICE"
             };
 
-            DTOManager.dodajPravnoLice(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajPravnoLice(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

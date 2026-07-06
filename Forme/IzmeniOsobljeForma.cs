@@ -22,7 +22,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = $"Izmeni — {_osoblje.Ime} {_osoblje.Prezime}";
-            this.Size            = new Size(450, 320);
+            this.Size            = new Size(450, 360);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -77,7 +77,7 @@ namespace OsiguranjApp.Forme
                 Status     = cmbStatus.SelectedItem?.ToString()
             };
 
-            DTOManager.azurirajOsoblje(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.azurirajOsoblje(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

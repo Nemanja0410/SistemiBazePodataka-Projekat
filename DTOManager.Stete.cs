@@ -76,6 +76,7 @@ namespace OsiguranjApp
 
         public static void dodajStetu(StetaBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -98,6 +99,7 @@ namespace OsiguranjApp
 
         public static void azurirajStetu(StetaBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
             try
             {
                 ISession s  = DataLayer.GetSession();
@@ -115,6 +117,7 @@ namespace OsiguranjApp
 
         public static void obrisiStetu(int id)
         {
+            ProveriOvlascenje("ADMIN");
             try
             {
                 ISession s  = DataLayer.GetSession();
@@ -129,6 +132,7 @@ namespace OsiguranjApp
 
         public static void dodajFazuObrade(FazaObradeBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -146,6 +150,28 @@ namespace OsiguranjApp
                     Napomena = dto.Napomena
                 };
                 s.Save(f);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void azurirajFazuObrade(FazaObradeBasic dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
+            try
+            {
+                ISession   s = DataLayer.GetSession();
+                FazaObrade f = s.Load<FazaObrade>(dto.FazaId);
+                f.NazivFaze      = dto.NazivFaze;
+                f.DatumPocetka   = dto.DatumPocetka;
+                f.DatumZavrsetka = dto.DatumZavrsetka;
+                f.OdgovornoLice  = dto.OdgovornoLiceId.HasValue
+                    ? s.Load<Osoblje>(dto.OdgovornoLiceId.Value) : null;
+                f.Odluka         = dto.Odluka;
+                f.Dokumentacija  = dto.Dokumentacija;
+                f.Napomena       = dto.Napomena;
+                s.SaveOrUpdate(f);
                 s.Flush();
                 s.Close();
             }
@@ -175,6 +201,7 @@ namespace OsiguranjApp
 
         public static void dodajVozilo(VoziloBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();

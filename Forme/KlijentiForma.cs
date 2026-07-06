@@ -7,9 +7,22 @@ namespace OsiguranjApp.Forme
 {
     public partial class KlijentiForma : Form
     {
+        private readonly bool _samoPregled;
+
         public KlijentiForma()
         {
             InitializeComponent();
+            _samoPregled = SesijaKorisnik.ImaUlogu("LEKAR", "PRAVNIK", "PROCENITELJ");
+            if (_samoPregled)
+            {
+                btnDodajFizicko.Visible     = false;
+                btnDodajPravno.Visible      = false;
+                btnDodajInstituciju.Visible = false;
+                btnIzmeni.Visible           = false;
+                btnObrisi.Visible           = false;
+                UiHelper.PoravnajTraku(532, btnDodajFizicko, btnDodajPravno, btnDodajInstituciju,
+                    btnIzmeni, btnObrisi, btnOsvezi, lblBroj);
+            }
             this.Load += (s, e) => this.BeginInvoke(new Action(ucitajKlijente));
         }
 
@@ -66,24 +79,28 @@ namespace OsiguranjApp.Forme
 
         private void btnDodajFizicko_Click(object sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var f = new DodajFizickoLiceForma();
             if (f.ShowDialog() == DialogResult.OK) ucitajKlijente();
         }
 
         private void btnDodajPravno_Click(object sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var f = new DodajPravnoLiceForma();
             if (f.ShowDialog() == DialogResult.OK) ucitajKlijente();
         }
 
         private void btnDodajInstituciju_Click(object sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var f = new DodajInstitucijaForma();
             if (f.ShowDialog() == DialogResult.OK) ucitajKlijente();
         }
 
         private void btnIzmeni_Click(object sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var k = odabraniKlijent();
             if (k == null) { MessageBox.Show("Izaberite klijenta.", "Info"); return; }
             var f = new IzmeniKlijentaForma(k);
@@ -92,6 +109,7 @@ namespace OsiguranjApp.Forme
 
         private void btnObrisi_Click(object sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var k = odabraniKlijent();
             if (k == null) { MessageBox.Show("Izaberite klijenta.", "Info"); return; }
             if (MessageBox.Show(
@@ -99,14 +117,14 @@ namespace OsiguranjApp.Forme
                     "Potvrda brisanja", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
                 == DialogResult.Yes)
             {
-                DTOManager.obrisiKlijenta(k.KlijentId);
+                if (!UiHelper.PokusajAkciju(() => DTOManager.obrisiKlijenta(k.KlijentId))) return;
                 ucitajKlijente();
                 rtbDetalji.Clear();
                 lblDetaljiNaziv.Text = "Detalji klijenta";
             }
         }
 
-        private void dgvKlijenti_SelectionChanged(object sender, EventArgs e)
+        private void dgvKlijenti_SelectionChanged(object? sender, EventArgs e)
         {
             var k = odabraniKlijent();
             if (k == null) return;

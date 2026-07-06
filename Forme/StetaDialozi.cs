@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using OsiguranjApp.DTOs;
 
@@ -11,6 +13,7 @@ namespace OsiguranjApp.Forme
         private ComboBox      cmbVrsta = null!, cmbStatus = null!, cmbPolisa = null!, cmbPodnosilac = null!;
         private DateTimePicker dtpNastanka = null!;
         private Button        btnSacuvaj = null!, btnOdustani = null!;
+        private List<PolisaPregled> _svePolise = new();
 
         public DodajSteteForma()
         {
@@ -20,13 +23,13 @@ namespace OsiguranjApp.Forme
 
         private void InitializeComponent()
         {
-            this.Text            = "Nova šteta";
-            this.Size            = new Size(490, 440);
+            this.Text= "Nova šteta";
+            this.Size= new Size(490, 470);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox     = false;
+            this.MaximizeBox= false;
             this.StartPosition   = FormStartPosition.CenterParent;
-            this.Font            = new Font("Segoe UI", 9f);
-            this.BackColor       = Color.White;
+            this.Font= new Font("Segoe UI", 9f);
+            this.BackColor= Color.White;
 
             var tbl = UiHelper.NapraviLayout(10);
 
@@ -35,14 +38,15 @@ namespace OsiguranjApp.Forme
             cmbVrsta.SelectedIndex = 0;
             cmbVrsta.SelectedIndexChanged += (s, e) => txtBroj.Text = GenerisiBroj();
 
-            txtBroj       = UiHelper.DodajRed(tbl, 1, "Broj štete *:");
-            cmbPolisa     = UiHelper.DodajComboRed(tbl, 2, "Polisa *:");
-            cmbPodnosilac = UiHelper.DodajComboRed(tbl, 3, "Podnosilac *:");
+            txtBroj= UiHelper.DodajRed(tbl, 1, "Broj štete *:");
+            cmbPodnosilac = UiHelper.DodajComboRed(tbl, 2, "Podnosilac *:");
+            cmbPolisa= UiHelper.DodajComboRed(tbl, 3, "Polisa *:");
+            cmbPodnosilac.SelectedIndexChanged += CmbPodnosilac_SelectedIndexChanged;
             dtpNastanka   = UiHelper.DodajDTPRed(tbl, 4, "Datum nastanka *:");
             txtLokacija   = UiHelper.DodajRed(tbl, 5, "Lokacija:");
-            txtOpis       = UiHelper.DodajRed(tbl, 6, "Opis događaja:");
-            txtIznos      = UiHelper.DodajRed(tbl, 7, "Procenjeni iznos:");
-            cmbStatus     = UiHelper.DodajComboRed(tbl, 8, "Status:");
+            txtOpis= UiHelper.DodajRed(tbl, 6, "Opis događaja:");
+            txtIznos= UiHelper.DodajRed(tbl, 7, "Procenjeni iznos:");
+            cmbStatus= UiHelper.DodajComboRed(tbl, 8, "Status:");
             cmbStatus.Items.AddRange(new[] { "PRIJAVLJENA","U_OBRADI","U_PROCENI","ODOBRENA","ODBIJENA","ISPLACENA","ZATVORENA" });
             cmbStatus.SelectedIndex = 0;
 
@@ -64,24 +68,39 @@ namespace OsiguranjApp.Forme
 
         private void UcitajComboove()
         {
-            cmbPolisa.Items.Add(new ComboItem(0, "-- Izaberi polisu --"));
-            foreach (var p in DTOManager.vratiSvePolise())
-                cmbPolisa.Items.Add(new ComboItem(p.PolisaId, $"{p.BrojPolise} ({p.TipOsiguranja})"));
-            cmbPolisa.SelectedIndex = 0;
+            _svePolise = DTOManager.vratiSvePolise();
 
             cmbPodnosilac.Items.Add(new ComboItem(0, "-- Izaberi klijenta --"));
             foreach (var k in DTOManager.vratiSveKlijente())
                 cmbPodnosilac.Items.Add(new ComboItem(k.KlijentId, k.Naziv));
             cmbPodnosilac.SelectedIndex = 0;
 
+            OsveziPolise(0);
+
             txtBroj.Text = GenerisiBroj();
+        }
+
+        private void CmbPodnosilac_SelectedIndexChanged(object? sender, EventArgs e)
+        {
+            int klijentId = (cmbPodnosilac.SelectedItem as ComboItem)?.Id ?? 0;
+            OsveziPolise(klijentId);
+        }
+
+        private void OsveziPolise(int klijentId)
+        {
+            cmbPolisa.Items.Clear();
+            cmbPolisa.Items.Add(new ComboItem(0, "-- Izaberi polisu --"));
+            foreach (var p in _svePolise.Where(p => p.UgovaracId == klijentId))
+                cmbPolisa.Items.Add(new ComboItem(p.PolisaId, $"{p.BrojPolise} ({p.TipOsiguranja})"));
+            cmbPolisa.SelectedIndex = 0;
+            cmbPolisa.Enabled = klijentId != 0;
         }
 
         private void BtnSacuvaj_Click(object? sender, EventArgs e)
         {
-            if (((ComboItem)cmbPolisa.SelectedItem)?.Id == 0)
+            if ((cmbPolisa.SelectedItem as ComboItem)?.Id == 0)
             { MessageBox.Show("Izaberite polisu.", "Validacija"); return; }
-            if (((ComboItem)cmbPodnosilac.SelectedItem)?.Id == 0)
+            if ((cmbPodnosilac.SelectedItem as ComboItem)?.Id == 0)
             { MessageBox.Show("Izaberite podnosioca.", "Validacija"); return; }
 
             decimal? iznos = null;
@@ -93,18 +112,18 @@ namespace OsiguranjApp.Forme
 
             var dto = new StetaBasic
             {
-                BrojStete      = txtBroj.Text.Trim(),
-                VrstaStete     = cmbVrsta.SelectedItem?.ToString(),
-                PolisaId       = ((ComboItem)cmbPolisa.SelectedItem!).Id,
+                BrojStete= txtBroj.Text.Trim(),
+                VrstaStete= cmbVrsta.SelectedItem?.ToString(),
+                PolisaId= ((ComboItem)cmbPolisa.SelectedItem!).Id,
                 PodnosilacId   = ((ComboItem)cmbPodnosilac.SelectedItem!).Id,
                 DatumNastanka  = dtpNastanka.Value.Date,
-                Lokacija       = txtLokacija.Text.Trim(),
+                Lokacija= txtLokacija.Text.Trim(),
                 OpisDogodjaja  = txtOpis.Text.Trim(),
                 ProcenjeniIznos = iznos,
-                Status         = cmbStatus.SelectedItem?.ToString()
+                Status= cmbStatus.SelectedItem?.ToString()
             };
 
-            DTOManager.dodajStetu(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajStetu(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }
@@ -127,21 +146,21 @@ namespace OsiguranjApp.Forme
 
         private void InitializeComponent()
         {
-            this.Text            = $"Izmeni štetu — {_steta.BrojStete}";
-            this.Size            = new Size(460, 320);
+            this.Text= $"Izmeni štetu — {_steta.BrojStete}";
+            this.Size= new Size(460, 360);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
-            this.Font            = new Font("Segoe UI", 9f);
-            this.BackColor       = Color.White;
+            this.Font= new Font("Segoe UI", 9f);
+            this.BackColor= Color.White;
 
             var tbl = UiHelper.NapraviLayout(7);
 
             dtpNastanka = UiHelper.DodajDTPRed(tbl, 0, "Datum nastanka *:");
             txtLokacija = UiHelper.DodajRed(tbl, 1, "Lokacija:");
-            txtOpis     = UiHelper.DodajRed(tbl, 2, "Opis događaja:");
+            txtOpis= UiHelper.DodajRed(tbl, 2, "Opis događaja:");
             txtIznos    = UiHelper.DodajRed(tbl, 3, "Procenjeni iznos:");
-            cmbStatus   = UiHelper.DodajComboRed(tbl, 4, "Status:");
+            cmbStatus= UiHelper.DodajComboRed(tbl, 4, "Status:");
             cmbStatus.Items.AddRange(new[] { "PRIJAVLJENA","U_OBRADI","U_PROCENI","ODOBRENA","ODBIJENA","ISPLACENA","ZATVORENA" });
 
             var (btnOk, btnCancel) = UiHelper.DodajDugmadPanel(tbl, 5);
@@ -156,9 +175,9 @@ namespace OsiguranjApp.Forme
         private void PopuniFormu()
         {
             dtpNastanka.Value      = _steta.DatumNastanka;
-            txtLokacija.Text       = _steta.Lokacija ?? "";
-            txtOpis.Text           = _steta.OpisDogodjaja ?? "";
-            txtIznos.Text          = _steta.ProcenjeniIznos?.ToString("F2") ?? "";
+            txtLokacija.Text= _steta.Lokacija ?? "";
+            txtOpis.Text= _steta.OpisDogodjaja ?? "";
+            txtIznos.Text= _steta.ProcenjeniIznos?.ToString("F2") ?? "";
             cmbStatus.SelectedItem = _steta.Status;
         }
 
@@ -172,12 +191,12 @@ namespace OsiguranjApp.Forme
                     iznos = iz;
 
             _steta.DatumNastanka  = dtpNastanka.Value.Date;
-            _steta.Lokacija       = txtLokacija.Text.Trim();
+            _steta.Lokacija= txtLokacija.Text.Trim();
             _steta.OpisDogodjaja  = txtOpis.Text.Trim();
             _steta.ProcenjeniIznos = iznos;
-            _steta.Status         = cmbStatus.SelectedItem?.ToString();
+            _steta.Status= cmbStatus.SelectedItem?.ToString();
 
-            DTOManager.azurirajStetu(_steta);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.azurirajStetu(_steta))) return;
             DialogResult = DialogResult.OK;
             Close();
         }

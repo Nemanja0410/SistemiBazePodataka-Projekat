@@ -9,6 +9,7 @@ namespace OsiguranjApp.Forme
     {
         private readonly int _stetaId;
         private readonly int _redniBroj;
+        private readonly FazaObradeBasic? _postojeca;
 
         private TextBox       txtNaziv = null!, txtDokumentacija = null!, txtNapomena = null!;
         private ComboBox      cmbOdluka = null!, cmbOdgovornoLice = null!;
@@ -24,10 +25,22 @@ namespace OsiguranjApp.Forme
             UcitajOsoblje();
         }
 
+        public DodajFazuForma(FazaObradeBasic postojeca)
+        {
+            _postojeca = postojeca;
+            _stetaId   = postojeca.StetaId;
+            _redniBroj = postojeca.RedniBrojFaze;
+            InitializeComponent();
+            UcitajOsoblje();
+            PopuniFormu(postojeca);
+        }
+
         private void InitializeComponent()
         {
-            this.Text            = $"Nova faza obrade (br. {_redniBroj})";
-            this.Size            = new Size(470, 420);
+            this.Text            = _postojeca == null
+                ? $"Nova faza obrade (br. {_redniBroj})"
+                : $"Izmeni fazu — {_postojeca.NazivFaze}";
+            this.Size            = new Size(470, 440);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -76,15 +89,33 @@ namespace OsiguranjApp.Forme
             cmbOdgovornoLice.SelectedIndex = 0;
         }
 
+        private void PopuniFormu(FazaObradeBasic f)
+        {
+            txtNaziv.Text        = f.NazivFaze;
+            dtpPocetka.Value     = f.DatumPocetka;
+            chkZavrsena.Checked  = f.DatumZavrsetka.HasValue;
+            dtpZavrsetka.Enabled = f.DatumZavrsetka.HasValue;
+            if (f.DatumZavrsetka.HasValue) dtpZavrsetka.Value = f.DatumZavrsetka.Value;
+
+            for (int i = 0; i < cmbOdgovornoLice.Items.Count; i++)
+                if ((cmbOdgovornoLice.Items[i] as ComboItem)?.Id == (f.OdgovornoLiceId ?? 0))
+                { cmbOdgovornoLice.SelectedIndex = i; break; }
+
+            if (!string.IsNullOrEmpty(f.Odluka)) cmbOdluka.SelectedItem = f.Odluka;
+            txtDokumentacija.Text = f.Dokumentacija;
+            txtNapomena.Text      = f.Napomena;
+        }
+
         private void BtnSacuvaj_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtNaziv.Text))
             { MessageBox.Show("Naziv faze je obavezan.", "Validacija"); txtNaziv.Focus(); return; }
 
-            var ol = (ComboItem)cmbOdgovornoLice.SelectedItem;
+            var ol = (ComboItem)cmbOdgovornoLice.SelectedItem!;
 
             var dto = new FazaObradeBasic
             {
+                FazaId           = _postojeca?.FazaId ?? 0,
                 StetaId          = _stetaId,
                 RedniBrojFaze    = _redniBroj,
                 NazivFaze        = txtNaziv.Text.Trim(),
@@ -96,7 +127,11 @@ namespace OsiguranjApp.Forme
                 Napomena         = txtNapomena.Text.Trim()
             };
 
-            DTOManager.dodajFazuObrade(dto);
+            bool uspeh = _postojeca == null
+                ? UiHelper.PokusajAkciju(() => DTOManager.dodajFazuObrade(dto))
+                : UiHelper.PokusajAkciju(() => DTOManager.azurirajFazuObrade(dto));
+            if (!uspeh) return;
+
             DialogResult = DialogResult.OK;
             Close();
         }

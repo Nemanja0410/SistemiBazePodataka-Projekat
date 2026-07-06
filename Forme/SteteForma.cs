@@ -7,9 +7,18 @@ namespace OsiguranjApp.Forme
 {
     public partial class SteteForma : Form
     {
+        private readonly bool _samoPregled;
+
         public SteteForma()
         {
             InitializeComponent();
+            _samoPregled = SesijaKorisnik.ImaUlogu("LEKAR", "PRAVNIK", "PROCENITELJ");
+            if (_samoPregled)
+            {
+                btnDodaj.Visible  = false;
+                btnObrisi.Visible = false;
+                UiHelper.PoravnajTraku(396, btnDodaj, btnIzmeni, btnObrisi, btnFaze, btnOsvezi, lblBroj);
+            }
             this.Load += (s, e) => this.BeginInvoke(new Action(ucitajStete));
         }
 
@@ -71,6 +80,7 @@ namespace OsiguranjApp.Forme
 
         private void btnDodaj_Click(object? sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var f = new DodajSteteForma();
             if (f.ShowDialog() == DialogResult.OK) ucitajStete();
         }
@@ -85,12 +95,13 @@ namespace OsiguranjApp.Forme
 
         private void btnObrisi_Click(object? sender, EventArgs e)
         {
+            if (_samoPregled) return;
             var st = odabranaSteta();
             if (st == null) { MessageBox.Show("Izaberite štetu.", "Info"); return; }
             if (MessageBox.Show($"Obrisati štetu {st.BrojStete}?", "Potvrda",
                     MessageBoxButtons.YesNo, MessageBoxIcon.Warning) == DialogResult.Yes)
             {
-                DTOManager.obrisiStetu(st.StetaId);
+                if (!UiHelper.PokusajAkciju(() => DTOManager.obrisiStetu(st.StetaId))) return;
                 ucitajStete();
             }
         }
@@ -123,95 +134,5 @@ namespace OsiguranjApp.Forme
             if (st.ProcenjeniIznos.HasValue)
                 rtbDetalji.AppendText($"\nProcenjeni iznos: {st.ProcenjeniIznos.Value:N2} RSD\n");
         }
-    }
-
-    partial class SteteForma
-    {
-        private System.ComponentModel.IContainer? components = null;
-        protected override void Dispose(bool disposing)
-        { if (disposing && components != null) components.Dispose(); base.Dispose(disposing); }
-
-        private void InitializeComponent()
-        {
-            this.SuspendLayout();
-            var naslov = UiHelper.NapraviNaslov("⚠️  Upravljanje štetama");
-
-            var pnlT = new Panel { BackColor = Color.White, Dock = DockStyle.Top, Height = 50 };
-
-            cmbVrsta = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(8, 12), Width = 180 };
-            cmbVrsta.Items.AddRange(new[] { "SVE","AUTO","ZDRAVSTVENA","IMOVINSKA","PUTNA","ZIVOTNA","OSTALO" });
-            cmbVrsta.SelectedIndex = 0;
-            cmbVrsta.SelectedIndexChanged += cmbVrsta_SelectedIndexChanged;
-
-            cmbStatus = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(196, 12), Width = 190 };
-            cmbStatus.Items.AddRange(new[] { "SVE","PRIJAVLJENA","U_OBRADI","U_PROCENI","ODOBRENA","ODBIJENA","ISPLACENA","ZATVORENA" });
-            cmbStatus.SelectedIndex = 0;
-            cmbStatus.SelectedIndexChanged += cmbStatus_SelectedIndexChanged;
-
-            int bx = 396;
-            btnDodaj  = NB("➕  Dodaj",  UiHelper.Zelena,      100, ref bx);
-            btnIzmeni = NB("✏️  Izmeni", UiHelper.PlavaSvetla, 95,  ref bx);
-            btnObrisi = NB("🗑️  Obriši", UiHelper.Crvena,      90,  ref bx);
-            btnFaze   = NB("📋  Faze",   UiHelper.Narandzasta, 85,  ref bx);
-            btnOsvezi = NB("🔄  Osveži", UiHelper.Siva,        85,  ref bx);
-            lblBroj   = new Label { AutoSize = true, Location = new Point(bx + 6, 16), ForeColor = UiHelper.Siva, Text = "Ukupno: 0" };
-
-            btnDodaj.Click  += btnDodaj_Click;
-            btnIzmeni.Click += btnIzmeni_Click;
-            btnObrisi.Click += btnObrisi_Click;
-            btnFaze.Click   += btnFaze_Click;
-            btnOsvezi.Click += btnOsvezi_Click;
-
-            pnlT.Controls.AddRange(new Control[] { cmbVrsta, cmbStatus, btnDodaj, btnIzmeni, btnObrisi, btnFaze, btnOsvezi, lblBroj });
-
-            var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 660, BorderStyle = BorderStyle.None };
-
-            dgvStete = new DataGridView { Dock = DockStyle.Fill };
-            UiHelper.StilizirajGrid(dgvStete);
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColId",      HeaderText = "ID",             Visible = false });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColBroj",    HeaderText = "Broj štete",     FillWeight = 20 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColVrsta",   HeaderText = "Vrsta",          FillWeight = 14 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColPod",     HeaderText = "Podnosilac",     FillWeight = 22 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColPolisa",  HeaderText = "Polisa",         FillWeight = 18 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColIznos",   HeaderText = "Procenjeni iznos", FillWeight = 14 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColStatus",  HeaderText = "Status",         FillWeight = 12 });
-            dgvStete.Columns.Add(new DataGridViewTextBoxColumn { Name = "sColDat",     HeaderText = "Datum prijave",  FillWeight = 12 });
-            dgvStete.CellDoubleClick  += dgvStete_CellDoubleClick;
-            dgvStete.SelectionChanged += dgvStete_SelectionChanged;
-            dgvStete.CellFormatting   += dgvStete_CellFormatting;
-            split.Panel1.Controls.Add(dgvStete);
-            split.Panel1.Padding = new Padding(8, 4, 4, 8);
-
-            var pnlD = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(16) };
-            lblDetaljiNaziv = new Label { Dock = DockStyle.Top, Height = 36, Font = new Font("Segoe UI", 12F, FontStyle.Bold), ForeColor = UiHelper.Plava, Text = "Detalji štete" };
-            rtbDetalji = new RichTextBox { Dock = DockStyle.Fill, ReadOnly = true, BorderStyle = BorderStyle.None, Font = new Font("Segoe UI", 9.5F), BackColor = Color.White };
-            pnlD.Controls.Add(rtbDetalji);
-            pnlD.Controls.Add(lblDetaljiNaziv);
-            split.Panel2.Controls.Add(pnlD);
-            split.Panel2.Padding = new Padding(4, 4, 8, 8);
-
-            this.Controls.Add(split);
-            this.Controls.Add(pnlT);
-            this.Controls.Add(naslov);
-            this.BackColor = UiHelper.PozadinaForm;
-            this.Font      = new Font("Segoe UI", 9F);
-            this.Size      = new Size(1150, 720);
-            this.Text      = "Štete";
-            this.ResumeLayout(false);
-        }
-
-        private Button NB(string t, Color b, int w, ref int x)
-        {
-            var btn = UiHelper.NapraviDugme(t, b, w);
-            btn.Location = new Point(x, 10);
-            x += w + 6;
-            return btn;
-        }
-
-        private DataGridView dgvStete = null!;
-        private ComboBox     cmbVrsta = null!, cmbStatus = null!;
-        private Button       btnDodaj = null!, btnIzmeni = null!, btnObrisi = null!, btnFaze = null!, btnOsvezi = null!;
-        private Label        lblBroj = null!, lblDetaljiNaziv = null!;
-        private RichTextBox  rtbDetalji = null!;
     }
 }

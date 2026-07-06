@@ -63,6 +63,7 @@ namespace OsiguranjApp
 
         public static void dodajPolisu(PolisaBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -87,6 +88,7 @@ namespace OsiguranjApp
 
         public static void azurirajPolisu(PolisaBasic dto)
         {
+            ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -106,6 +108,7 @@ namespace OsiguranjApp
 
         public static void obrisiPolisu(int id)
         {
+            ProveriOvlascenje("ADMIN");
             try
             {
                 ISession s = DataLayer.GetSession();

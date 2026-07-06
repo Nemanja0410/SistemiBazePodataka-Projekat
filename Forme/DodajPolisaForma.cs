@@ -22,7 +22,7 @@ namespace OsiguranjApp.Forme
         private void InitializeComponent()
         {
             this.Text            = "Nova polisa osiguranja";
-            this.Size            = new Size(490, 460);
+            this.Size            = new Size(490, 500);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox     = false;
             this.StartPosition   = FormStartPosition.CenterParent;
@@ -88,7 +88,7 @@ namespace OsiguranjApp.Forme
         {
             if (string.IsNullOrWhiteSpace(txtBroj.Text))
             { MessageBox.Show("Broj polise je obavezan.", "Validacija"); return; }
-            if (((ComboItem)cmbUgovarac.SelectedItem)?.Id == 0)
+            if ((cmbUgovarac.SelectedItem as ComboItem)?.Id == 0)
             { MessageBox.Show("Izaberite ugovarača.", "Validacija"); return; }
             if (!decimal.TryParse(txtPremija.Text.Replace(",", "."),
                     System.Globalization.NumberStyles.Any,
@@ -97,7 +97,7 @@ namespace OsiguranjApp.Forme
             if (dtpIsteka.Value <= dtpPocetka.Value)
             { MessageBox.Show("Datum isteka mora biti posle datuma početka.", "Validacija"); return; }
 
-            var agent = (ComboItem)cmbAgent.SelectedItem;
+            var agent = cmbAgent.SelectedItem as ComboItem;
             var dto = new PolisaBasic
             {
                 BrojPolise    = txtBroj.Text.Trim(),
@@ -112,7 +112,7 @@ namespace OsiguranjApp.Forme
                 AgentId       = agent?.Id > 0 ? agent.Id : (int?)null
             };
 
-            DTOManager.dodajPolisu(dto);
+            if (!UiHelper.PokusajAkciju(() => DTOManager.dodajPolisu(dto))) return;
             DialogResult = DialogResult.OK;
             Close();
         }
