@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klijenti — OsiguranjApp</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container pb-5">
+        <div class="pt-4 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h3 class="mb-0">👤 Klijenti</h3>
+            <div class="d-flex gap-2">
+                <button class="btn btn-osig" data-bs-toggle="modal" data-bs-target="#modalFizicko">➕ Fizičko lice</button>
+                <button class="btn btn-osig-plava" data-bs-toggle="modal" data-bs-target="#modalPravno">➕ Pravno lice</button>
+            </div>
+        </div>
+
+        <div id="greska" class="greska-box d-none"></div>
+
+        <div class="d-flex gap-2 mb-3">
+            <input type="text" id="pretraga" class="form-control" placeholder="Pretraga po nazivu..." style="max-width:280px;">
+            <select id="filterTip" class="form-select" style="max-width:220px;">
+                <option value="">Svi tipovi</option>
+                <option value="FIZICKO_LICE">Fizičko lice</option>
+                <option value="PRAVNO_LICE">Pravno lice</option>
+                <option value="JAVNA_INSTITUCIJA">Javna institucija</option>
+            </select>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Naziv</th><th>Tip</th><th>Telefon</th><th>Email</th><th>Status</th><th>Registrovan</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyKlijenti"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: fizicko lice -->
+    <div class="modal fade" id="modalFizicko" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaFizicko">
+                    <div class="modal-header"><h5 class="modal-title">Novo fizičko lice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaFizicko" class="greska-box d-none"></div>
+                        <div class="mb-2"><label class="form-label">Ime i prezime *</label><input class="form-control" id="fNaziv" required></div>
+                        <div class="mb-2"><label class="form-label">JMBG</label><input class="form-control" id="fJmbg" maxlength="13"></div>
+                        <div class="mb-2"><label class="form-label">Datum rođenja</label><input type="date" class="form-control" id="fDatumRodjenja"></div>
+                        <div class="mb-2"><label class="form-label">Zanimanje</label><input class="form-control" id="fZanimanje"></div>
+                        <div class="mb-2"><label class="form-label">Adresa</label><input class="form-control" id="fAdresa"></div>
+                        <div class="mb-2"><label class="form-label">Telefon</label><input class="form-control" id="fTelefon"></div>
+                        <div class="mb-2"><label class="form-label">Email</label><input type="email" class="form-control" id="fEmail"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: pravno lice -->
+    <div class="modal fade" id="modalPravno" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaPravno">
+                    <div class="modal-header"><h5 class="modal-title">Novo pravno lice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaPravno" class="greska-box d-none"></div>
+                        <div class="mb-2"><label class="form-label">Naziv firme *</label><input class="form-control" id="pNaziv" required></div>
+                        <div class="mb-2"><label class="form-label">PIB</label><input class="form-control" id="pPib" maxlength="9"></div>
+                        <div class="mb-2"><label class="form-label">Matični broj</label><input class="form-control" id="pMaticniBroj" maxlength="8"></div>
+                        <div class="mb-2"><label class="form-label">Delatnost</label><input class="form-control" id="pDelatnost"></div>
+                        <div class="mb-2"><label class="form-label">Adresa</label><input class="form-control" id="pAdresa"></div>
+                        <div class="mb-2"><label class="form-label">Telefon</label><input class="form-control" id="pTelefon"></div>
+                        <div class="mb-2"><label class="form-label">Email</label><input type="email" class="form-control" id="pEmail"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="api.js"></script>
+    <script src="klijenti.js"></script>
+</body>
+</html>

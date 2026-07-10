@@ -1,0 +1,76 @@
+:root {
+    --plava: #1e4067;
+    --plava-svetla: #3478ba;
+    --zelena: #27ae60;
+    --narandzasta: #e67e22;
+    --crvena: #c0392b;
+    --siva: #787878;
+    --pozadina: #f0f2f5;
+}
+
+body {
+    background: var(--pozadina);
+    font-family: "Segoe UI", -apple-system, sans-serif;
+}
+
+.navbar { background: var(--plava) !important; }
+
+.card-header {
+    background: var(--plava);
+    color: #fff;
+    font-weight: 600;
+}
+
+.btn-osig {
+    background: var(--zelena);
+    color: #fff;
+    border: none;
+}
+.btn-osig:hover { background: #1e8449; color: #fff; }
+
+.btn-osig-plava {
+    background: var(--plava-svetla);
+    color: #fff;
+    border: none;
+}
+.btn-osig-plava:hover { background: #285f92; color: #fff; }
+
+.btn-osig-crvena {
+    background: var(--crvena);
+    color: #fff;
+    border: none;
+}
+.btn-osig-crvena:hover { background: #922b21; color: #fff; }
+
+table.table thead { background: var(--plava); color: #fff; }
+table.table thead th { border: none; }
+
+.status-pill {
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    color: #fff;
+    display: inline-block;
+}
+.status-aktivan, .status-aktivna, .status-odobren, .status-uspesno { background: var(--zelena); }
+.status-neaktivan, .status-blokiran, .status-odbijen, .status-zakljucan, .status-raskinuta { background: var(--crvena); }
+.status-na_cekanju, .status-u_obradi, .status-prijavljena { background: var(--narandzasta); }
+
+.greska-box {
+    background: #fdecea;
+    color: #611a15;
+    border: 1px solid #f5c6cb;
+    border-radius: 6px;
+    padding: .6rem .9rem;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.stat-card .broj { font-size: 2rem; font-weight: 700; color: var(--plava); }
+.stat-card .naziv { color: var(--siva); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; }
