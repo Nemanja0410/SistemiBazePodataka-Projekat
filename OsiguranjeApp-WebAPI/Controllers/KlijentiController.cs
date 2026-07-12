@@ -23,6 +23,13 @@ namespace OsiguranjApp.Controllers
             return Ok(DTOManager.vratiKlijenta(id));
         }
 
+        // GET api/klijenti/5/detalji  (ukljucuje specificna polja podtipa - JMBG/PIB/nivo itd.)
+        [HttpGet("{id:int}/detalji")]
+        public ActionResult<object> VratiDetalje(int id)
+        {
+            return Ok(DTOManager.vratiKlijentaDetaljno(id));
+        }
+
         // POST api/klijenti/fizicko-lice
         [HttpPost("fizicko-lice")]
         public IActionResult DodajFizickoLice([FromBody] FizickoLiceBasic dto)

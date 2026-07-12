@@ -8,16 +8,15 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container pb-5">
-        <div class="pt-4 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="container-fluid pb-5 px-4">
+        <div class="pt-4 pb-2">
             <h3 class="mb-0">📋 Polise osiguranja</h3>
-            <button class="btn btn-osig" data-bs-toggle="modal" data-bs-target="#modalPolisa">➕ Nova polisa</button>
         </div>
 
         <div id="greska" class="greska-box d-none"></div>
 
-        <div class="d-flex gap-2 mb-3">
-            <select id="filterTip" class="form-select" style="max-width:220px;">
+        <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
+            <select id="filterTip" class="form-select" style="max-width:200px;">
                 <option value="">Svi tipovi</option>
                 <option value="ZIVOTNO">Životno</option>
                 <option value="ZDRAVSTVENO">Zdravstveno</option>
@@ -28,27 +27,44 @@
                 <option value="ODGOVORNOST">Odgovornost</option>
                 <option value="SPECIJALIZOVANO">Specijalizovano</option>
             </select>
-            <select id="filterStatus" class="form-select" style="max-width:200px;">
+            <select id="filterStatus" class="form-select" style="max-width:180px;">
                 <option value="">Svi statusi</option>
                 <option value="AKTIVNA">Aktivna</option>
                 <option value="ISTEKLA">Istekla</option>
                 <option value="RASKINUTA">Raskinuta</option>
                 <option value="MIROVANJE">Mirovanje</option>
             </select>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <button class="btn btn-osig" data-bs-toggle="modal" data-bs-target="#modalPolisa">➕ Dodaj</button>
+                <button class="btn btn-outline-secondary" id="btnOsvezi">⟳ Osveži</button>
+                <span class="text-muted" id="lblBroj">Ukupno: 0</span>
+            </div>
         </div>
 
         <div class="card shadow-sm">
             <div class="card-body p-0">
                 <table class="table table-hover mb-0">
                     <thead>
-                        <tr><th>Broj</th><th>Tip</th><th>Ugovarač</th><th>Premija</th><th>Status</th><th>Važi od–do</th><th></th></tr>
+                        <tr>
+                            <th class="sortable" data-sort="brojPolise">Broj polise</th>
+                            <th class="sortable" data-sort="tipOsiguranja">Tip</th>
+                            <th class="sortable" data-sort="ugovaracNaziv">Ugovarač</th>
+                            <th class="sortable" data-sort="osnovnaPremija">Premija</th>
+                            <th class="sortable" data-sort="status">Status</th>
+                            <th class="sortable" data-sort="datumPocetka">Važi od</th>
+                            <th class="sortable" data-sort="datumIsteka">Važi do</th>
+                            <th style="width:150px;"></th>
+                        </tr>
                     </thead>
                     <tbody id="tbodyPolise"></tbody>
                 </table>
             </div>
         </div>
+        <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red za detalje, ili na zaglavlje kolone za sortiranje.</p>
+        <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red da vidiš detalje i opcije polise.</p>
     </div>
 
+    <!-- Modal: nova polisa -->
     <div class="modal fade" id="modalPolisa" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -92,6 +108,66 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: izmeni polisu (isto kao WinForms IzmeniPolisaForma) -->
+    <div class="modal fade" id="modalIzmeni" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaIzmeni">
+                    <div class="modal-header"><h5 class="modal-title" id="izmeniNaslov">Izmeni polisu</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaIzmeni" class="greska-box d-none"></div>
+                        <input type="hidden" id="ezId">
+                        <div class="mb-2"><label class="form-label">Ugovarač *</label><select class="form-select" id="ezUgovaracId" required></select></div>
+                        <div class="mb-2"><label class="form-label">Agent</label><select class="form-select" id="ezAgentId"><option value="">-- bez agenta --</option></select></div>
+                        <div class="row">
+                            <div class="col mb-2"><label class="form-label">Datum početka *</label><input type="date" class="form-control" id="ezDatumPocetka" required></div>
+                            <div class="col mb-2"><label class="form-label">Datum isteka *</label><input type="date" class="form-control" id="ezDatumIsteka" required></div>
+                        </div>
+                        <div class="mb-2"><label class="form-label">Premija *</label><input type="number" step="0.01" class="form-control" id="ezPremija" required></div>
+                        <div class="mb-2"><label class="form-label">Način plaćanja</label>
+                            <select class="form-select" id="ezNacin">
+                                <option value="JEDNOKRATNO">Jednokratno</option>
+                                <option value="MESECNO">Mesečno</option>
+                                <option value="KVARTAL">Kvartalno</option>
+                                <option value="POLUGODISNJE">Polugodišnje</option>
+                                <option value="GODISNJE">Godišnje</option>
+                            </select>
+                        </div>
+                        <div class="mb-2"><label class="form-label">Status</label>
+                            <select class="form-select" id="ezStatus">
+                                <option value="AKTIVNA">Aktivna</option>
+                                <option value="ISTEKLA">Istekla</option>
+                                <option value="RASKINUTA">Raskinuta</option>
+                                <option value="MIROVANJE">Mirovanje</option>
+                                <option value="OBNOVLJENA">Obnovljena</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offcanvas: detalji polise + akcije -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offDetalji" style="width:400px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="detaljiNaziv">Detalji polise</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column">
+            <div class="d-flex gap-2 mb-3 pb-3 border-bottom">
+                <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
+                <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
+            </div>
+            <div id="detaljiSadrzaj" class="flex-grow-1"><p class="text-muted">Učitavanje...</p></div>
         </div>
     </div>
 

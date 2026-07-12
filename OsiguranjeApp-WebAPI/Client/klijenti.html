@@ -8,18 +8,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container pb-5">
-        <div class="pt-4 pb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="container-fluid pb-5 px-4">
+        <div class="pt-4 pb-2">
             <h3 class="mb-0">👤 Klijenti</h3>
-            <div class="d-flex gap-2">
-                <button class="btn btn-osig" data-bs-toggle="modal" data-bs-target="#modalFizicko">➕ Fizičko lice</button>
-                <button class="btn btn-osig-plava" data-bs-toggle="modal" data-bs-target="#modalPravno">➕ Pravno lice</button>
-            </div>
         </div>
 
         <div id="greska" class="greska-box d-none"></div>
 
-        <div class="d-flex gap-2 mb-3">
+        <div class="d-flex gap-2 mb-3 align-items-center flex-wrap">
             <input type="text" id="pretraga" class="form-control" placeholder="Pretraga po nazivu..." style="max-width:280px;">
             <select id="filterTip" class="form-select" style="max-width:220px;">
                 <option value="">Svi tipovi</option>
@@ -27,6 +23,18 @@
                 <option value="PRAVNO_LICE">Pravno lice</option>
                 <option value="JAVNA_INSTITUCIJA">Javna institucija</option>
             </select>
+            <div class="ms-auto d-flex align-items-center gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-osig dropdown-toggle" data-bs-toggle="dropdown">➕ Dodaj</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalFizicko">Fizičko lice</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalPravno">Pravno lice</a></li>
+                        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalInstitucija">Javna institucija</a></li>
+                    </ul>
+                </div>
+                <button class="btn btn-outline-secondary" id="btnOsvezi">⟳ Osveži</button>
+                <span class="text-muted" id="lblBroj">Ukupno: 0</span>
+            </div>
         </div>
 
         <div class="card shadow-sm">
@@ -34,13 +42,20 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Naziv</th><th>Tip</th><th>Telefon</th><th>Email</th><th>Status</th><th>Registrovan</th><th></th>
+                            <th class="sortable" data-sort="naziv">Naziv</th>
+                            <th class="sortable" data-sort="tipKlijenta">Tip</th>
+                            <th class="sortable" data-sort="telefon">Telefon</th>
+                            <th class="sortable" data-sort="email">Email</th>
+                            <th class="sortable" data-sort="status">Status</th>
+                            <th class="sortable" data-sort="datumRegistracije">Registrovan</th>
+                            <th style="width:150px;"></th>
                         </tr>
                     </thead>
                     <tbody id="tbodyKlijenti"></tbody>
                 </table>
             </div>
         </div>
+        <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red za detalje, ili na zaglavlje kolone za sortiranje.</p>
     </div>
 
     <!-- Modal: fizicko lice -->
@@ -92,6 +107,86 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: javna institucija -->
+    <div class="modal fade" id="modalInstitucija" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaInstitucija">
+                    <div class="modal-header"><h5 class="modal-title">Nova javna institucija</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaInstitucija" class="greska-box d-none"></div>
+                        <div class="mb-2"><label class="form-label">Naziv *</label><input class="form-control" id="iNaziv" required></div>
+                        <div class="mb-2"><label class="form-label">PIB *</label><input class="form-control" id="iPib" maxlength="9" required></div>
+                        <div class="mb-2"><label class="form-label">Matični broj *</label><input class="form-control" id="iMaticniBroj" maxlength="8" required></div>
+                        <div class="mb-2"><label class="form-label">Delatnost</label><input class="form-control" id="iDelatnost"></div>
+                        <div class="mb-2"><label class="form-label">Nivo institucije *</label>
+                            <select class="form-select" id="iNivo" required>
+                                <option value="REPUBLICKA">Republička</option>
+                                <option value="POKRAJINSKA">Pokrajinska</option>
+                                <option value="GRADSKA" selected>Gradska</option>
+                                <option value="OPSTINSKA">Opštinska</option>
+                            </select>
+                        </div>
+                        <div class="mb-2"><label class="form-label">Adresa</label><input class="form-control" id="iAdresa"></div>
+                        <div class="mb-2"><label class="form-label">Telefon</label><input class="form-control" id="iTelefon"></div>
+                        <div class="mb-2"><label class="form-label">Email</label><input type="email" class="form-control" id="iEmail"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: izmeni klijenta (samo zajednicka polja - isto kao WinForms) -->
+    <div class="modal fade" id="modalIzmeni" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaIzmeni">
+                    <div class="modal-header"><h5 class="modal-title" id="izmeniNaslov">Izmeni klijenta</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaIzmeni" class="greska-box d-none"></div>
+                        <input type="hidden" id="ezId">
+                        <div class="mb-2"><label class="form-label">Naziv / Ime *</label><input class="form-control" id="ezNaziv" required></div>
+                        <div class="mb-2"><label class="form-label">Adresa</label><input class="form-control" id="ezAdresa"></div>
+                        <div class="mb-2"><label class="form-label">Telefon</label><input class="form-control" id="ezTelefon"></div>
+                        <div class="mb-2"><label class="form-label">Email</label><input type="email" class="form-control" id="ezEmail"></div>
+                        <div class="mb-2"><label class="form-label">Status</label>
+                            <select class="form-select" id="ezStatus">
+                                <option value="AKTIVAN">AKTIVAN</option>
+                                <option value="NEAKTIVAN">NEAKTIVAN</option>
+                                <option value="BLOKIRAN">BLOKIRAN</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offcanvas: detalji klijenta + akcije -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offDetalji" style="width:380px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="detaljiNaziv">Detalji klijenta</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column">
+            <div class="d-flex gap-2 mb-3 pb-3 border-bottom">
+                <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
+                <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
+            </div>
+            <div id="detaljiSadrzaj" class="flex-grow-1"><p class="text-muted">Učitavanje...</p></div>
         </div>
     </div>
 

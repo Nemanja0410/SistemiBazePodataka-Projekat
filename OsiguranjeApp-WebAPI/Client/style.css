@@ -45,6 +45,15 @@ body {
 table.table thead { background: var(--plava); color: #fff; }
 table.table thead th { border: none; }
 
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+th.sortable:hover { background: var(--plava-svetla); }
+th.sortable .strelica { opacity: .6; font-size: .75em; margin-left: 4px; }
+th.sortable.sort-aktivno .strelica { opacity: 1; }
+
 .status-pill {
     font-size: .78rem;
     font-weight: 600;

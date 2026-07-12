@@ -51,6 +51,7 @@ function ucitajNavigaciju(aktivna) {
         { href: "klijenti.html", tekst: "Klijenti", id: "klijenti" },
         { href: "polise.html", tekst: "Polise", id: "polise" },
         { href: "stete.html", tekst: "Štete", id: "stete" },
+        { href: "izvestaji.html", tekst: "Izveštaji", id: "izvestaji" },
     ];
     if (Auth.imaUlogu("ADMIN")) stavke.push({ href: "nalozi.html", tekst: "Nalozi", id: "nalozi" });
 
@@ -105,6 +106,56 @@ function zahtevajPrijavu() {
     if (!Auth.jeUlogovan()) {
         location.href = "login.html";
     }
+}
+
+// izvezuCsv: redovi = niz nizova (uklj. zaglavlje kao prvi red), naziv bez ekstenzije.
+function izvezuCsv(redovi, naziv) {
+    const tekst = redovi
+        .map(red => red.map(polje => `"${String(polje ?? "").replace(/"/g, '""')}"`).join(";"))
+        .join("\r\n");
+    const blob = new Blob(["﻿" + tekst], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${naziv}_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+// omoguciSortiranje: kad se klikne na <th class="sortable" data-sort="polje">,
+// sortira poslednju ucitanu listu (dobaviListu()) po tom polju i ponovo je iscrtava (prikaziListu).
+function omoguciSortiranje(theadEl, dobaviListu, prikaziListu) {
+    let polje = null, smer = 1;
+    theadEl.querySelectorAll("th.sortable").forEach(th => {
+        const strelica = document.createElement("span");
+        strelica.className = "strelica";
+        th.appendChild(strelica);
+
+        th.addEventListener("click", () => {
+            const novoPolje = th.dataset.sort;
+            if (polje === novoPolje) smer *= -1; else { polje = novoPolje; smer = 1; }
+
+            theadEl.querySelectorAll("th.sortable").forEach(t => {
+                t.classList.remove("sort-aktivno");
+                t.querySelector(".strelica").textContent = "";
+            });
+            th.classList.add("sort-aktivno");
+            strelica.textContent = smer === 1 ? "▲" : "▼";
+
+            const sortirano = [...dobaviListu()].sort((a, b) => {
+                let va = a[polje], vb = b[polje];
+                if (va == null) va = "";
+                if (vb == null) vb = "";
+                if (typeof va === "string") { va = va.toLowerCase(); vb = String(vb).toLowerCase(); }
+                if (va < vb) return -1 * smer;
+                if (va > vb) return 1 * smer;
+                return 0;
+            });
+            prikaziListu(sortirano);
+        });
+    });
 }
 
 function prikaziGresku(el, err) {

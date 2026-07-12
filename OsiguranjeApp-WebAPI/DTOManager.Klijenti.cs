@@ -64,6 +64,30 @@ namespace OsiguranjApp
             return dto;
         }
 
+        // Vraca kao "object" (ne KlijentPregled) da bi JSON serijalizacija ukljucila i
+        // specificna polja podklase (JMBG/PIB/itd.) - System.Text.Json po difoltu
+        // serijalizuje po deklarisanom tipu, ne po stvarnom, pa bi ta polja inace nestala.
+        public static object vratiKlijentaDetaljno(int id)
+        {
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                // Get (ne Load) - Load vraca lenji proxy cija se "is FizickoLice" provera
+                // ne moze osloniti na stvarni tip pre inicijalizacije; Get odmah izvrsi upit
+                // i vrati pravu konkretnu podklasu, isto kao Query<Klijent>() u drugim metodama.
+                Klijent? k = s.Get<Klijent>(id);
+                if (k == null)
+                {
+                    s.Close();
+                    throw new NHibernate.ObjectNotFoundException(id, typeof(Klijent).Name);
+                }
+                var rezultat = mapKlijentPregled(k);
+                s.Close();
+                return rezultat;
+            }
+            catch (Exception) { throw; }
+        }
+
         public static void dodajFizickoLice(FizickoLiceBasic dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
