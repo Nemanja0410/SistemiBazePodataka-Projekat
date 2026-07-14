@@ -24,7 +24,7 @@
                 <option value="JAVNA_INSTITUCIJA">Javna institucija</option>
             </select>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <div class="dropdown">
+                <div class="dropdown" id="dropDodaj">
                     <button class="btn btn-osig dropdown-toggle" data-bs-toggle="dropdown">➕ Dodaj</button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#modalFizicko">Fizičko lice</a></li>
@@ -182,7 +182,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column">
-            <div class="d-flex gap-2 mb-3 pb-3 border-bottom">
+            <div class="d-flex gap-2 mb-3 pb-3 border-bottom" id="detaljiAkcije">
                 <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
                 <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
             </div>

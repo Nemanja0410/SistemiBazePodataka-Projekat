@@ -10,5 +10,5 @@ namespace OsiguranjApp.Entiteti
         public virtual decimal Fransiza { get; set; }
         public virtual decimal DodatnaPremija { get; set; }
         public override string ToString() => Naziv ?? "";
-    }
+    } 
 }

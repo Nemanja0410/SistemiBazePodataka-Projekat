@@ -18,18 +18,19 @@ namespace OsiguranjApp.DTOs
         public string?  UgovaracNaziv   { get; set; }
         public int?     AgentId         { get; set; }
         public string?  AgentIme        { get; set; }
+        // Ovde (a ne samo u PolisaBasic) da bi je nasledili i AutoPolisaPregled/ZivotnoPregled/itd,
+        // pa vratiPolisuDetaljno moze da je popuni bez obzira na konkretan podtip polise.
+        public IList<DodatnoPokrBasic> DodatnaPokrića { get; set; }
 
-        public PolisaPregled() { }
+        public PolisaPregled()
+        {
+            DodatnaPokrića = new List<DodatnoPokrBasic>();
+        }
         public override string ToString() => BrojPolise ?? "";
     }
 
     public class PolisaBasic : PolisaPregled
     {
-        public IList<DodatnoPokrBasic> DodatnaPokrića { get; set; }
-
-        public PolisaBasic()
-        {
-            DodatnaPokrića = new List<DodatnoPokrBasic>();
-        }
+        public PolisaBasic() { }
     }
 }

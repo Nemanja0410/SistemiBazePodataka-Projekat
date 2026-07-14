@@ -33,7 +33,7 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "OsiguranjApp Web API",
+        Title = "Osiguravajuća kompanija — Web API",
         Version = "v1",
         Description = "CRUD API nad NHibernate slojem osiguravajuće kuće (III projekat)."
     });
@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 var app = builder.Build();
 
 app.UseSwagger();
-app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OsiguranjApp Web API v1"));
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Osiguravajuca kompanija Web API v1"));
 
 if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect("/swagger"));

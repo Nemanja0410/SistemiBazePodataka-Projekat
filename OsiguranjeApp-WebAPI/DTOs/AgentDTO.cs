@@ -8,6 +8,8 @@ namespace OsiguranjApp.DTOs
         public string? Licenca            { get; set; }
         public string? RegionRada         { get; set; }
         public decimal ProvizijaProcenat  { get; set; }
+        public int     BrojPolisa         { get; set; }
+        public decimal UkupnaPremija      { get; set; }
 
         public AgentPregled() { }
     }

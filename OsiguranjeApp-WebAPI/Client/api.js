@@ -1,7 +1,7 @@
 // Zajednicki helper za sve stranice - poziva OsiguranjApp Web API i
 // upravlja JWT tokenom dobijenim sa POST /api/nalozi/prijava.
 
-const API_BASE = "http://localhost:5080/api";
+const API_BASE = "http://localhost:5000/api";
 
 const Auth = {
     get token() { return localStorage.getItem("token"); },
@@ -51,9 +51,15 @@ function ucitajNavigaciju(aktivna) {
         { href: "klijenti.html", tekst: "Klijenti", id: "klijenti" },
         { href: "polise.html", tekst: "Polise", id: "polise" },
         { href: "stete.html", tekst: "Štete", id: "stete" },
+        { href: "predmeti.html", tekst: "Predmeti", id: "predmeti" },
         { href: "izvestaji.html", tekst: "Izveštaji", id: "izvestaji" },
     ];
-    if (Auth.imaUlogu("ADMIN")) stavke.push({ href: "nalozi.html", tekst: "Nalozi", id: "nalozi" });
+    // Osoblje i Nalozi - isto kao WinForms MainForm.PrimeniUlogu(): btnOsoblje/btnNalozi
+    // vidljivi samo za ADMIN-a, sve ostale uloge ih uopste ne vide.
+    if (Auth.imaUlogu("ADMIN")) {
+        stavke.push({ href: "osoblje.html", tekst: "Osoblje", id: "osoblje" });
+        stavke.push({ href: "nalozi.html", tekst: "Nalozi", id: "nalozi" });
+    }
 
     const nav = document.createElement("nav");
     nav.className = "navbar navbar-expand-lg navbar-dark bg-dark mb-4";
@@ -62,8 +68,8 @@ function ucitajNavigaciju(aktivna) {
     nav.appendChild(container);
 
     const brand = document.createElement("span");
-    brand.className = "navbar-brand";
-    brand.textContent = "🔒 OsiguranjApp";
+    brand.className = "navbar-brand me-4";
+    brand.textContent = "🔒 Osiguravajuća kompanija";
     container.appendChild(brand);
 
     const ul = document.createElement("ul");
@@ -156,6 +162,16 @@ function omoguciSortiranje(theadEl, dobaviListu, prikaziListu) {
             prikaziListu(sortirano);
         });
     });
+}
+
+function popuniSelect(sel, lista, idPolje, tekstFn) {
+    sel.innerHTML = "";
+    for (const x of lista) {
+        const opt = document.createElement("option");
+        opt.value = x[idPolje];
+        opt.textContent = tekstFn(x);
+        sel.appendChild(opt);
+    }
 }
 
 function prikaziGresku(el, err) {

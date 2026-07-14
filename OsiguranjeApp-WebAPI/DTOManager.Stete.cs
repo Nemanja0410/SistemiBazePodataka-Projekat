@@ -43,7 +43,7 @@ namespace OsiguranjApp
                     PodnosilacId = st.Podnosilac?.KlijentId ?? 0, PodnosilacNaziv = st.Podnosilac?.Naziv,
                     VrstaStete = st.VrstaStete, OpisDogodjaja = st.OpisDogodjaja,
                     Lokacija = st.Lokacija, Status = st.Status,
-                    ProcenjeniIznos = st.ProcenjeniIznos
+                    ProcenjeniIznos = st.ProcenjeniIznos, Valuta = st.Valuta
                 };
                 foreach (var f in st.FazeObrade)
                     dto.FazeObrade.Add(new FazaObradeBasic
@@ -73,6 +73,48 @@ namespace OsiguranjApp
             return dto;
         }
 
+        // Polimorfna verzija vratiStetu: cita stvarni (runtime) podtip (AutoSteta/
+        // ZdravstvenaSteta/ImovinskSteta) preko s.Get (ne s.Load, koji vraca proxy
+        // deklarisanog tipa), isti obrazac kao vratiPolisuDetaljno.
+        public static object vratiStetuDetaljno(int id)
+        {
+            ISession s  = DataLayer.GetSession();
+            Steta?   st = s.Get<Steta>(id);
+            if (st == null) { s.Close(); throw new NHibernate.ObjectNotFoundException(id, typeof(Steta).Name); }
+
+            StetaPregled rezultat = st switch
+            {
+                AutoSteta a => mapAutoStetaPregled(a),
+                ZdravstvenaSteta z => mapZdravstvenaStetaPregled(z),
+                ImovinskSteta i => mapImovinskStetaPregled(i),
+                _ => mapStetaPregled(st)
+            };
+            foreach (var f in st.FazeObrade)
+                rezultat.FazeObrade.Add(new FazaObradeBasic
+                {
+                    FazaId = f.FazaId, StetaId = st.StetaId,
+                    RedniBrojFaze = f.RedniBrojFaze, NazivFaze = f.NazivFaze,
+                    DatumPocetka = f.DatumPocetka, DatumZavrsetka = f.DatumZavrsetka,
+                    OdgovornoLiceId  = f.OdgovornoLice?.OsobljeId,
+                    OdgovornoLiceIme = f.OdgovornoLice != null
+                        ? $"{f.OdgovornoLice.Ime} {f.OdgovornoLice.Prezime}" : null,
+                    Odluka = f.Odluka, Dokumentacija = f.Dokumentacija,
+                    Napomena = f.Napomena
+                });
+            foreach (var pr in st.ProceneSteta)
+                rezultat.ProceneSteta.Add(new ProcenaStetaBasic
+                {
+                    ProcenaId = pr.ProcenaId, StetaId = st.StetaId,
+                    DatumProc = pr.DatumProc,
+                    ProceniteljId  = pr.Procenitelj?.OsobljeId ?? 0,
+                    ProceniteljIme = pr.Procenitelj != null ? $"{pr.Procenitelj.Ime} {pr.Procenitelj.Prezime}" : null,
+                    MetodProc = pr.MetodProc, Nalaz = pr.Nalaz,
+                    ProcenjeniIznos = pr.ProcenjeniIznos, Preporuka = pr.Preporuka
+                });
+            s.Close();
+            return rezultat;
+        }
+
         public static void dodajStetu(StetaBasic dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
@@ -86,6 +128,7 @@ namespace OsiguranjApp
                     OpisDogodjaja = dto.OpisDogodjaja, Lokacija = dto.Lokacija,
                     Status = dto.Status ?? "PRIJAVLJENA",
                     ProcenjeniIznos = dto.ProcenjeniIznos,
+                    Valuta = dto.Valuta ?? "RSD",
                     Polisa    = s.Load<Polisa>(dto.PolisaId),
                     Podnosilac = s.Load<Klijent>(dto.PodnosilacId)
                 };
@@ -105,7 +148,7 @@ namespace OsiguranjApp
                 Steta    st = s.Load<Steta>(dto.StetaId);
                 st.VrstaStete = dto.VrstaStete; st.OpisDogodjaja = dto.OpisDogodjaja;
                 st.Lokacija = dto.Lokacija; st.Status = dto.Status;
-                st.ProcenjeniIznos = dto.ProcenjeniIznos;
+                st.ProcenjeniIznos = dto.ProcenjeniIznos; st.Valuta = dto.Valuta ?? "RSD";
                 st.DatumNastanka = dto.DatumNastanka;
                 s.SaveOrUpdate(st);
                 s.Flush();
@@ -242,7 +285,7 @@ namespace OsiguranjApp
                 PodnosilacNaziv = st.Podnosilac?.Naziv,
                 VrstaStete = st.VrstaStete, OpisDogodjaja = st.OpisDogodjaja,
                 Lokacija = st.Lokacija, Status = st.Status,
-                ProcenjeniIznos = st.ProcenjeniIznos
+                ProcenjeniIznos = st.ProcenjeniIznos, Valuta = st.Valuta
             };
         }
     }

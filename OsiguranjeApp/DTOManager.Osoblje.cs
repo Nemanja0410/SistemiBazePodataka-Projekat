@@ -184,7 +184,7 @@ namespace OsiguranjApp
                 {
                     OsobljeId = a.OsobljeId, Ime = a.Ime, Prezime = a.Prezime,
                     TipOsoblja = "AGENT", Status = a.Status,
-                    Telefon = a.Telefon, Email = a.Email,
+                    Adresa = a.Adresa, Telefon = a.Telefon, Email = a.Email,
                     DatumAngazovanja = a.DatumAngazovanja,
                     TipAgenta = a.TipAgenta, Licenca = a.Licenca,
                     RegionRada = a.RegionRada, ProvizijaProcenat = a.ProvizijaProcenat
@@ -194,7 +194,7 @@ namespace OsiguranjApp
                 {
                     OsobljeId = pr.OsobljeId, Ime = pr.Ime, Prezime = pr.Prezime,
                     TipOsoblja = "PRAVNIK", Status = pr.Status,
-                    Telefon = pr.Telefon, Email = pr.Email,
+                    Adresa = pr.Adresa, Telefon = pr.Telefon, Email = pr.Email,
                     DatumAngazovanja = pr.DatumAngazovanja,
                     TipPravnika = pr.TipPravnika, BarBroj = pr.BarBroj
                 };
@@ -203,7 +203,7 @@ namespace OsiguranjApp
                 {
                     OsobljeId = pc.OsobljeId, Ime = pc.Ime, Prezime = pc.Prezime,
                     TipOsoblja = "PROCENITELJ", Status = pc.Status,
-                    Telefon = pc.Telefon, Email = pc.Email,
+                    Adresa = pc.Adresa, Telefon = pc.Telefon, Email = pc.Email,
                     DatumAngazovanja = pc.DatumAngazovanja,
                     BrojLicence = pc.BrojLicence
                 };
@@ -211,7 +211,7 @@ namespace OsiguranjApp
             {
                 OsobljeId = o.OsobljeId, Ime = o.Ime, Prezime = o.Prezime,
                 TipOsoblja = o.TipOsoblja, Status = o.Status,
-                Telefon = o.Telefon, Email = o.Email,
+                Adresa = o.Adresa, Telefon = o.Telefon, Email = o.Email,
                 DatumAngazovanja = o.DatumAngazovanja
             };
         }

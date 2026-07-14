@@ -7,6 +7,7 @@ namespace OsiguranjApp.DTOs
         public decimal LimitStomatologa  { get; set; }
         public decimal LimitBolnickih    { get; set; }
         public decimal LimitBolnickiDan  { get; set; }
+        public string? Pokrica           { get; set; }
 
         public ZdravstvenoPregled() { }
     }

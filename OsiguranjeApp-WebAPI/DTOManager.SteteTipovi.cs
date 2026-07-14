@@ -14,12 +14,13 @@ namespace OsiguranjApp
         private static Steta popuniBazuStete(Steta st, StetaPregled dto, ISession s)
         {
             st.BrojStete = dto.BrojStete;
-            st.DatumPrijave = DateTime.Today;
+            if (st.StetaId == 0) st.DatumPrijave = DateTime.Today; // samo pri kreiranju, ne pri izmeni
             st.DatumNastanka = dto.DatumNastanka;
             st.Status = dto.Status ?? "PRIJAVLJENA";
             st.OpisDogodjaja = dto.OpisDogodjaja;
             st.Lokacija = dto.Lokacija;
             st.ProcenjeniIznos = dto.ProcenjeniIznos;
+            st.Valuta = dto.Valuta ?? "RSD";
             st.Polisa = s.Load<Polisa>(dto.PolisaId);
             st.Podnosilac = s.Load<Klijent>(dto.PodnosilacId);
             return st;
@@ -64,7 +65,9 @@ namespace OsiguranjApp
 
         public static void azurirajAutoStetu(AutoStetaPregled dto)
         {
-            ProveriOvlascenje("ADMIN", "AGENT");
+            // Isti opseg kao azurirajStetu (bazni put): LEKAR/PRAVNIK/PROCENITELJ takodje
+            // smeju da azuriraju stetu (status, iznos...) kroz "Izmeni" formu.
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -88,6 +91,7 @@ namespace OsiguranjApp
             PodnosilacId = a.Podnosilac?.KlijentId ?? 0, PodnosilacNaziv = a.Podnosilac?.Naziv,
             VrstaStete = a.VrstaStete, OpisDogodjaja = a.OpisDogodjaja,
             Lokacija = a.Lokacija, Status = a.Status, ProcenjeniIznos = a.ProcenjeniIznos,
+            Valuta = a.Valuta,
             ZapisnikPolicije = a.ZapisnikPolicije, Servis = a.Servis,
             VoziloId = a.Vozilo?.VoziloId, VoziloOpis = a.Vozilo?.ToString()
         };
@@ -132,7 +136,7 @@ namespace OsiguranjApp
 
         public static void azurirajZdravstvenuStetu(ZdravstvenaStetaPregled dto)
         {
-            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR");
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -157,6 +161,7 @@ namespace OsiguranjApp
             PodnosilacId = z.Podnosilac?.KlijentId ?? 0, PodnosilacNaziv = z.Podnosilac?.Naziv,
             VrstaStete = z.VrstaStete, OpisDogodjaja = z.OpisDogodjaja,
             Lokacija = z.Lokacija, Status = z.Status, ProcenjeniIznos = z.ProcenjeniIznos,
+            Valuta = z.Valuta,
             Dijagnoza = z.Dijagnoza, MedicinskaDocumentacija = z.MedicinskaDocumentacija,
             ZdravstvenaUstanova = z.ZdravstvenaUstanova,
             LekarId = z.Lekar?.OsobljeId, LekarIme = z.Lekar != null ? $"{z.Lekar.Ime} {z.Lekar.Prezime}" : null
@@ -200,7 +205,7 @@ namespace OsiguranjApp
 
         public static void azurirajImovinskuStetu(ImovinskStetaPregled dto)
         {
-            ProveriOvlascenje("ADMIN", "AGENT");
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -223,6 +228,7 @@ namespace OsiguranjApp
             PodnosilacId = i.Podnosilac?.KlijentId ?? 0, PodnosilacNaziv = i.Podnosilac?.Naziv,
             VrstaStete = i.VrstaStete, OpisDogodjaja = i.OpisDogodjaja,
             Lokacija = i.Lokacija, Status = i.Status, ProcenjeniIznos = i.ProcenjeniIznos,
+            Valuta = i.Valuta,
             ProcenaOstecenja = i.ProcenaOstecenja, IzvodjacSanacije = i.IzvodjacSanacije
         };
     }

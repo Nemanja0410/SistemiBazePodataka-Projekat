@@ -17,6 +17,7 @@ namespace OsiguranjApp.Mapiranja
             Map(x => x.Lokacija).Column("LOKACIJA");
             Map(x => x.Status).Column("STATUS");
             Map(x => x.ProcenjeniIznos).Column("PROCENJENI_IZNOS");
+            Map(x => x.Valuta).Column("VALUTA");
             References(x => x.Polisa).Column("POLISA_ID").Not.Nullable();
             References(x => x.Podnosilac).Column("PODNOSILAC_ID").Not.Nullable();
             References(x => x.Agent).Column("AGENT_ID");

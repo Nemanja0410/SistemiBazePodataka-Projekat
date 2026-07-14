@@ -18,20 +18,20 @@ namespace OsiguranjApp.DTOs
         public string?  Lokacija         { get; set; }
         public string?  Status           { get; set; }
         public decimal? ProcenjeniIznos  { get; set; }
+        public string?  Valuta           { get; set; }
+        public IList<FazaObradeBasic>   FazeObrade   { get; set; }
+        public IList<ProcenaStetaBasic> ProceneSteta { get; set; }
 
-        public StetaPregled() { }
+        public StetaPregled()
+        {
+            FazeObrade   = new List<FazaObradeBasic>();
+            ProceneSteta = new List<ProcenaStetaBasic>();
+        }
         public override string ToString() => BrojStete ?? "";
     }
 
     public class StetaBasic : StetaPregled
     {
-        public IList<FazaObradeBasic>   FazeObrade   { get; set; }
-        public IList<ProcenaStetaBasic> ProceneSteta { get; set; }
-
-        public StetaBasic()
-        {
-            FazeObrade   = new List<FazaObradeBasic>();
-            ProceneSteta = new List<ProcenaStetaBasic>();
-        }
+        public StetaBasic() { }
     }
 }

@@ -650,3 +650,16 @@ CREATE TABLE FOTOGRAFIJA (
 
 ALTER TABLE PROCENITELJ ADD broj_licence VARCHAR2(50);
 ORDER BY p.datum_isteka;
+
+-- ---------- Valuta za stete (polise su vec imale valutu, stete nisu) ----------
+
+ALTER TABLE STETA ADD valuta VARCHAR2(5) DEFAULT 'RSD' NOT NULL
+    CONSTRAINT chk_st_valuta CHECK (valuta IN ('RSD','EUR','USD'));
+
+-- ---------- Obuhvacena pokrica kod zdravstvenog osiguranja ----------
+
+ALTER TABLE ZDRAVSTVENO_OSIGURANJE ADD pokrica VARCHAR2(1000);
+
+-- ---------- Fransiza kod dodatnog pokrica je procenat (0-100), ne fiksan iznos ----------
+
+ALTER TABLE DODATNO_POKRICE ADD CONSTRAINT chk_dp_fransiza CHECK (fransiza BETWEEN 0 AND 100);

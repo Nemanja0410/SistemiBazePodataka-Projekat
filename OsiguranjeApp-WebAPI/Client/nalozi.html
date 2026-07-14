@@ -11,6 +11,7 @@
     <div class="container pb-5">
         <div class="pt-4 pb-2 d-flex justify-content-between align-items-center">
             <h3 class="mb-0">🔑 Upravljanje nalozima</h3>
+            <button class="btn btn-outline-secondary" id="btnOsvezi">⟳ Osveži</button>
         </div>
 
         <div id="greska" class="greska-box d-none"></div>
@@ -47,15 +48,54 @@
                             <th>Status</th>
                             <th>Neuspešnih prijava</th>
                             <th>Zadnja prijava</th>
-                            <th style="width:220px;"></th>
+                            <th style="width:50px;"></th>
                         </tr>
                     </thead>
                     <tbody id="tbodySvi"></tbody>
                 </table>
             </div>
         </div>
+        <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red za detalje naloga.</p>
     </div>
 
+    <!-- Offcanvas: detalji naloga + akcije (isto kao WinForms dgvNalozi_SelectionChanged) -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offDetalji" style="width:400px;">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="detaljiNaziv">Detalji naloga</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body d-flex flex-column">
+            <div class="d-flex gap-2 mb-3 pb-3 border-bottom flex-wrap" id="detaljiAkcije"></div>
+            <div id="detaljiSadrzaj" class="flex-grow-1"></div>
+        </div>
+    </div>
+
+    <!-- Modal: reset lozinke (isto kao WinForms UnesiLozinkuForma) -->
+    <div class="modal fade" id="modalReset" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formaReset">
+                    <div class="modal-header"><h5 class="modal-title" id="resetNaslov">Reset lozinke</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                    <div class="modal-body">
+                        <div id="greskaReset" class="greska-box d-none"></div>
+                        <input type="hidden" id="rzNalogId">
+                        <div class="mb-2">
+                            <label class="form-label">Nova lozinka *</label>
+                            <input type="password" class="form-control" id="rzLozinka" required>
+                            <div class="form-text">Najmanje 8 karaktera i bar jedna cifra.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
+                        <button type="submit" class="btn btn-osig">Resetuj</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="api.js"></script>
     <script src="nalozi.js"></script>
 </body>

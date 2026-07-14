@@ -11,9 +11,12 @@ namespace OsiguranjApp
     public partial class DTOManager
     {
 
-        public static List<OsobljePregled> vratiSveOsoblje(string? tip = null)
+        public static List<object> vratiSveOsoblje(string? tip = null)
         {
-            var lista = new List<OsobljePregled>();
+            // List<object>, ne List<OsobljePregled> - System.Text.Json serijalizuje
+            // po deklarisanom tipu elementa liste, pa bi se inace izgubila
+            // AgentBasic/ProceniteljBasic polja (isti problem kao kod klijenata).
+            var lista = new List<object>();
             try
             {
                 ISession s = DataLayer.GetSession();
@@ -39,11 +42,13 @@ namespace OsiguranjApp
                     var ab = new AgentBasic
                     {
                         OsobljeId = a.OsobljeId, Ime = a.Ime, Prezime = a.Prezime,
+                        Jmbg = a.Jmbg, Adresa = a.Adresa,
                         TipOsoblja = "AGENT", Status = a.Status,
                         Telefon = a.Telefon, Email = a.Email,
                         DatumAngazovanja = a.DatumAngazovanja,
                         TipAgenta = a.TipAgenta, Licenca = a.Licenca,
-                        RegionRada = a.RegionRada, ProvizijaProcenat = a.ProvizijaProcenat
+                        RegionRada = a.RegionRada, ProvizijaProcenat = a.ProvizijaProcenat,
+                        BrojPolisa = a.Polise.Count, UkupnaPremija = a.Polise.Sum(p => p.OsnovnaPremija)
                     };
                     foreach (var p in a.Polise)
                         ab.Polise.Add(mapPolisaPregled(p));
@@ -66,6 +71,7 @@ namespace OsiguranjApp
                     var pb = new ProceniteljBasic
                     {
                         OsobljeId = p.OsobljeId, Ime = p.Ime, Prezime = p.Prezime,
+                        Jmbg = p.Jmbg, Adresa = p.Adresa,
                         TipOsoblja = "PROCENITELJ", Status = p.Status,
                         Telefon = p.Telefon, Email = p.Email,
                         DatumAngazovanja = p.DatumAngazovanja,
@@ -142,7 +148,9 @@ namespace OsiguranjApp
             try
             {
                 ISession s = DataLayer.GetSession();
-                Osoblje  o = s.Load<Osoblje>(dto.OsobljeId);
+                // s.Get (ne s.Load) da bi "is Pravnik/Procenitelj" ispod odmah videlo
+                // stvarni (runtime) podtip - isti problem kao kod vratiPolisuDetaljno.
+                Osoblje  o = s.Get<Osoblje>(dto.OsobljeId);
                 o.Ime = dto.Ime; o.Prezime = dto.Prezime;
                 o.Adresa = dto.Adresa; o.Telefon = dto.Telefon;
                 o.Email = dto.Email; o.Status = dto.Status;
@@ -239,36 +247,61 @@ namespace OsiguranjApp
         private static OsobljePregled mapOsobljePregled(Osoblje o)
         {
             if (o is Agent a)
-                return new AgentBasic
+            {
+                var ab = new AgentBasic
                 {
                     OsobljeId = a.OsobljeId, Ime = a.Ime, Prezime = a.Prezime,
+                    Jmbg = a.Jmbg, Adresa = a.Adresa,
                     TipOsoblja = "AGENT", Status = a.Status,
                     Telefon = a.Telefon, Email = a.Email,
                     DatumAngazovanja = a.DatumAngazovanja,
                     TipAgenta = a.TipAgenta, Licenca = a.Licenca,
-                    RegionRada = a.RegionRada, ProvizijaProcenat = a.ProvizijaProcenat
+                    RegionRada = a.RegionRada, ProvizijaProcenat = a.ProvizijaProcenat,
+                    BrojPolisa = a.Polise.Count, UkupnaPremija = a.Polise.Sum(p => p.OsnovnaPremija)
                 };
+                foreach (var p in a.Polise)
+                    ab.Polise.Add(mapPolisaPregled(p));
+                return ab;
+            }
             if (o is Pravnik pr)
                 return new OsobljeBasic
                 {
                     OsobljeId = pr.OsobljeId, Ime = pr.Ime, Prezime = pr.Prezime,
+                    Jmbg = pr.Jmbg, Adresa = pr.Adresa,
                     TipOsoblja = "PRAVNIK", Status = pr.Status,
                     Telefon = pr.Telefon, Email = pr.Email,
                     DatumAngazovanja = pr.DatumAngazovanja,
                     TipPravnika = pr.TipPravnika, BarBroj = pr.BarBroj
                 };
             if (o is Procenitelj pc)
-                return new ProceniteljBasic
+            {
+                var pb = new ProceniteljBasic
                 {
                     OsobljeId = pc.OsobljeId, Ime = pc.Ime, Prezime = pc.Prezime,
+                    Jmbg = pc.Jmbg, Adresa = pc.Adresa,
                     TipOsoblja = "PROCENITELJ", Status = pc.Status,
                     Telefon = pc.Telefon, Email = pc.Email,
                     DatumAngazovanja = pc.DatumAngazovanja,
                     BrojLicence = pc.BrojLicence
                 };
+                foreach (var ob in pc.OblasiProc)
+                    if (ob.Oblast != null) pb.Oblasti.Add(ob.Oblast);
+                return pb;
+            }
+            if (o is Lekar l)
+                return new LekarBasic
+                {
+                    OsobljeId = l.OsobljeId, Ime = l.Ime, Prezime = l.Prezime,
+                    Jmbg = l.Jmbg, Adresa = l.Adresa,
+                    TipOsoblja = "LEKAR", Status = l.Status,
+                    Telefon = l.Telefon, Email = l.Email,
+                    DatumAngazovanja = l.DatumAngazovanja,
+                    Specijalizacija = l.Specijalizacija, LicencaBroj = l.LicencaBroj
+                };
             return new OsobljePregled
             {
                 OsobljeId = o.OsobljeId, Ime = o.Ime, Prezime = o.Prezime,
+                Jmbg = o.Jmbg, Adresa = o.Adresa,
                 TipOsoblja = o.TipOsoblja, Status = o.Status,
                 Telefon = o.Telefon, Email = o.Email,
                 DatumAngazovanja = o.DatumAngazovanja

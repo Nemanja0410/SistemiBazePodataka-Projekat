@@ -18,6 +18,7 @@ namespace OsiguranjApp.DTOs
         public string?  Lokacija         { get; set; }
         public string?  Status           { get; set; }
         public decimal? ProcenjeniIznos  { get; set; }
+        public string?  Valuta           { get; set; }
 
         public StetaPregled() { }
         public override string ToString() => BrojStete ?? "";

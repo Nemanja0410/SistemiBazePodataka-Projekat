@@ -14,6 +14,7 @@ namespace OsiguranjApp.Mapiranja
             Map(x => x.LimitStomatologa).Column("LIMIT_STOMATOLOGA");
             Map(x => x.LimitBolnickih).Column("LIMIT_BOLNICKIH");
             Map(x => x.LimitBolnickiDan).Column("LIMIT_BOLNICKI_DAN");
+            Map(x => x.Pokrica).Column("POKRICA");
         }
     }
 }

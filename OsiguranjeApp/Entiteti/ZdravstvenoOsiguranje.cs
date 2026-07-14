@@ -7,5 +7,6 @@ namespace OsiguranjApp.Entiteti
         public virtual decimal LimitStomatologa { get; set; }
         public virtual decimal LimitBolnickih  { get; set; }
         public virtual decimal LimitBolnickiDan  { get; set; }
+        public virtual string? Pokrica { get; set; }
     }
 }

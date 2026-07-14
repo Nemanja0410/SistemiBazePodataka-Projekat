@@ -10,7 +10,7 @@ namespace OsiguranjApp.Controllers
     {
         // GET api/osoblje?tip=
         [HttpGet]
-        public ActionResult<List<OsobljePregled>> VratiSve([FromQuery] string? tip)
+        public ActionResult<List<object>> VratiSve([FromQuery] string? tip)
         {
             return Ok(DTOManager.vratiSveOsoblje(tip));
         }

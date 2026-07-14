@@ -27,6 +27,36 @@ namespace OsiguranjApp
             return p;
         }
 
+        // Belezi jedan red u ISTORIJA_POLISE pri svakoj izmeni postojece polise (poziva se samo iz
+        // azurirajXOsiguranje metoda, ne i iz dodajXOsiguranje - istorija prati promene, ne nastanak).
+        // Tip promene se izvodi iz stare/nove vrednosti statusa; ako se status nije promenio i dalje
+        // se beleži generalna IZMENA, jer zadatak trazi da se prate i obicne izmene podataka polise.
+        private static void ZabelezIstorijuPromene(ISession s, Polisa p, string? stariStatus)
+        {
+            string tip = (p.Status, stariStatus) switch
+            {
+                ("RASKINUTA", var stari) when stari != "RASKINUTA" => "RASKID",
+                ("MIROVANJE", var stari) when stari != "MIROVANJE" => "MIROVANJE",
+                ("OBNOVLJENA", var stari) when stari != "OBNOVLJENA" => "OBNOVA",
+                ("AKTIVNA", "MIROVANJE") => "REAKTIVACIJA",
+                ("AKTIVNA", "RASKINUTA") => "REAKTIVACIJA",
+                _ => "IZMENA"
+            };
+            string opis = stariStatus != p.Status
+                ? $"Status promenjen: {stariStatus} -> {p.Status}"
+                : "Izmena podataka polise";
+            int? osobljeId = SesijaKorisnik.TrenutniNalog?.OsobljeId;
+
+            s.Save(new IstorijaPolise
+            {
+                Polisa = p,
+                TipPromene = tip,
+                DatumPromene = DateTime.Now,
+                Opis = opis,
+                Korisnik = osobljeId.HasValue ? s.Load<Osoblje>(osobljeId.Value) : null
+            });
+        }
+
         // ---------- AutoOsiguranje ----------
 
         public static List<AutoPolisaPregled> vratiSvaAutoOsiguranja()
@@ -73,6 +103,7 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 AutoOsiguranje a = s.Load<AutoOsiguranje>(dto.PolisaId);
+                string? stariStatus = a.Status;
                 popuniBazuPolise(a, dto, s);
                 a.Vozilo = s.Load<Vozilo>(dto.VoziloId);
                 a.BonusMalusKlasa = dto.BonusMalusKlasa;
@@ -80,6 +111,7 @@ namespace OsiguranjApp
                 a.Vozaci.Clear();
                 foreach (var klijentId in dto.VoziciIds)
                     a.Vozaci.Add(s.Load<Klijent>(klijentId));
+                ZabelezIstorijuPromene(s, a, stariStatus);
                 s.SaveOrUpdate(a);
                 s.Flush();
                 s.Close();
@@ -142,9 +174,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ZivotnoOsiguranje z = s.Load<ZivotnoOsiguranje>(dto.PolisaId);
+                string? stariStatus = z.Status;
                 popuniBazuPolise(z, dto, s);
                 z.SumaOsiguranja = dto.SumaOsiguranja;
                 z.TipIsplate = dto.TipIsplate;
+                ZabelezIstorijuPromene(s, z, stariStatus);
                 s.SaveOrUpdate(z);
                 s.Flush();
                 s.Close();
@@ -191,7 +225,8 @@ namespace OsiguranjApp
                     LimitSpecijalista = dto.LimitSpecijalista,
                     LimitStomatologa = dto.LimitStomatologa,
                     LimitBolnickih = dto.LimitBolnickih,
-                    LimitBolnickiDan = dto.LimitBolnickiDan
+                    LimitBolnickiDan = dto.LimitBolnickiDan,
+                    Pokrica = dto.Pokrica
                 };
                 popuniBazuPolise(z, dto, s);
                 s.Save(z);
@@ -208,12 +243,15 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ZdravstvenoOsiguranje z = s.Load<ZdravstvenoOsiguranje>(dto.PolisaId);
+                string? stariStatus = z.Status;
                 popuniBazuPolise(z, dto, s);
                 z.MrezaUstanova = dto.MrezaUstanova;
                 z.LimitSpecijalista = dto.LimitSpecijalista;
                 z.LimitStomatologa = dto.LimitStomatologa;
                 z.LimitBolnickih = dto.LimitBolnickih;
                 z.LimitBolnickiDan = dto.LimitBolnickiDan;
+                z.Pokrica = dto.Pokrica;
+                ZabelezIstorijuPromene(s, z, stariStatus);
                 s.SaveOrUpdate(z);
                 s.Flush();
                 s.Close();
@@ -230,7 +268,7 @@ namespace OsiguranjApp
             AgentId = z.Agent?.OsobljeId, AgentIme = z.Agent != null ? $"{z.Agent.Ime} {z.Agent.Prezime}" : null,
             MrezaUstanova = z.MrezaUstanova, LimitSpecijalista = z.LimitSpecijalista,
             LimitStomatologa = z.LimitStomatologa, LimitBolnickih = z.LimitBolnickih,
-            LimitBolnickiDan = z.LimitBolnickiDan
+            LimitBolnickiDan = z.LimitBolnickiDan, Pokrica = z.Pokrica
         };
 
         // ---------- PutnoOsiguranje ----------
@@ -279,6 +317,7 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 PutnoOsiguranje p = s.Load<PutnoOsiguranje>(dto.PolisaId);
+                string? stariStatus = p.Status;
                 popuniBazuPolise(p, dto, s);
                 p.Destinacije = dto.Destinacije;
                 p.DatumPolaska = dto.DatumPolaska;
@@ -286,6 +325,7 @@ namespace OsiguranjApp
                 p.OsiguranaLica.Clear();
                 foreach (var klijentId in dto.OsiguranaLicaIds)
                     p.OsiguranaLica.Add(s.Load<Klijent>(klijentId));
+                ZabelezIstorijuPromene(s, p, stariStatus);
                 s.SaveOrUpdate(p);
                 s.Flush();
                 s.Close();
@@ -350,6 +390,7 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ImovinskOsiguranje i = s.Load<ImovinskOsiguranje>(dto.PolisaId);
+                string? stariStatus = i.Status;
                 popuniBazuPolise(i, dto, s);
                 i.VrsteRizika = dto.VrsteRizika;
                 i.Nekretnine.Clear();
@@ -358,6 +399,7 @@ namespace OsiguranjApp
                 i.PokretneImovine.Clear();
                 foreach (var pokretnaId in dto.PokretneImovineIds)
                     i.PokretneImovine.Add(s.Load<PokretnaImovina>(pokretnaId));
+                ZabelezIstorijuPromene(s, i, stariStatus);
                 s.SaveOrUpdate(i);
                 s.Flush();
                 s.Close();
@@ -419,6 +461,7 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 PoljoprivrednoOsiguranje p = s.Load<PoljoprivrednoOsiguranje>(dto.PolisaId);
+                string? stariStatus = p.Status;
                 popuniBazuPolise(p, dto, s);
                 p.Usevi.Clear();
                 foreach (var usevId in dto.UseviIds)
@@ -426,6 +469,7 @@ namespace OsiguranjApp
                 p.Zivotinje.Clear();
                 foreach (var zivotinjaId in dto.ZivotinjeIds)
                     p.Zivotinje.Add(s.Load<Zivotinja>(zivotinjaId));
+                ZabelezIstorijuPromene(s, p, stariStatus);
                 s.SaveOrUpdate(p);
                 s.Flush();
                 s.Close();
@@ -487,9 +531,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 OsiguranjeOdgovornosti o = s.Load<OsiguranjeOdgovornosti>(dto.PolisaId);
+                string? stariStatus = o.Status;
                 popuniBazuPolise(o, dto, s);
                 o.VrstaOdgovornosti = dto.VrstaOdgovornosti;
                 o.LimitOdgovornosti = dto.LimitOdgovornosti;
+                ZabelezIstorijuPromene(s, o, stariStatus);
                 s.SaveOrUpdate(o);
                 s.Flush();
                 s.Close();
@@ -550,9 +596,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 SpecijalizovanoOsiguranje sp = s.Load<SpecijalizovanoOsiguranje>(dto.PolisaId);
+                string? stariStatus = sp.Status;
                 popuniBazuPolise(sp, dto, s);
                 sp.NazivSpecijalizacije = dto.NazivSpecijalizacije;
                 sp.OpisUslova = dto.OpisUslova;
+                ZabelezIstorijuPromene(s, sp, stariStatus);
                 s.SaveOrUpdate(sp);
                 s.Flush();
                 s.Close();

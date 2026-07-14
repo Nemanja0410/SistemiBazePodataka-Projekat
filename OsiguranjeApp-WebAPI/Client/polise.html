@@ -35,7 +35,7 @@
                 <option value="MIROVANJE">Mirovanje</option>
             </select>
             <div class="ms-auto d-flex align-items-center gap-2">
-                <button class="btn btn-osig" data-bs-toggle="modal" data-bs-target="#modalPolisa">➕ Dodaj</button>
+                <button class="btn btn-osig" id="btnDodaj" data-bs-toggle="modal" data-bs-target="#modalPolisa">➕ Dodaj</button>
                 <button class="btn btn-outline-secondary" id="btnOsvezi">⟳ Osveži</button>
                 <span class="text-muted" id="lblBroj">Ukupno: 0</span>
             </div>
@@ -61,12 +61,11 @@
             </div>
         </div>
         <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red za detalje, ili na zaglavlje kolone za sortiranje.</p>
-        <p class="text-muted mt-2" style="font-size:.82rem;">Klikni na red da vidiš detalje i opcije polise.</p>
     </div>
 
     <!-- Modal: nova polisa -->
     <div class="modal fade" id="modalPolisa" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form id="formaPolisa">
                     <div class="modal-header"><h5 class="modal-title">Nova polisa</h5>
@@ -86,10 +85,6 @@
                             </select>
                         </div>
                         <div class="mb-2"><label class="form-label">Broj polise *</label><input class="form-control" id="brojPolise" required></div>
-                        <div class="mb-2 d-none" id="redSpecijalizacija">
-                            <label class="form-label">Naziv specijalizacije *</label>
-                            <input class="form-control" id="nazivSpecijalizacije">
-                        </div>
                         <div class="mb-2"><label class="form-label">Ugovarač *</label><select class="form-select" id="ugovaracId" required></select></div>
                         <div class="mb-2"><label class="form-label">Agent</label><select class="form-select" id="agentId"><option value="">-- bez agenta --</option></select></div>
                         <div class="row">
@@ -101,6 +96,100 @@
                             <div class="col mb-2"><label class="form-label">Valuta</label>
                                 <select class="form-select" id="valuta"><option>RSD</option><option>EUR</option><option>USD</option></select></div>
                         </div>
+
+                        <!-- ---------- Zivotno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redZivotno">
+                            <h6 class="text-muted">Životno osiguranje</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Suma osiguranja *</label><input type="number" step="0.01" class="form-control" id="sumaOsiguranja"></div>
+                                <div class="col mb-2"><label class="form-label">Tip isplate</label>
+                                    <select class="form-select" id="tipIsplate">
+                                        <option value="JEDNOKRATNA">Jednokratna</option>
+                                        <option value="MESECNA_RENTA">Mesečna renta</option>
+                                        <option value="KOMBINOVANA">Kombinovana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Zdravstveno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redZdravstveno">
+                            <h6 class="text-muted">Zdravstveno osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Mreža ustanova</label><input class="form-control" id="mrezaUstanova"></div>
+                            <div class="mb-2"><label class="form-label">Obuhvaćena pokrića</label><textarea class="form-control" id="pokrica" rows="2" placeholder="npr. Fizikalna terapija, Laboratorijske analize, Vakcinacija"></textarea></div>
+                            <div class="row">
+                                <div class="col-6 mb-2"><label class="form-label">Limit — specijalisti</label><input type="number" step="0.01" class="form-control" id="limitSpecijalista"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — stomatolog</label><input type="number" step="0.01" class="form-control" id="limitStomatologa"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — bolničke intervencije</label><input type="number" step="0.01" class="form-control" id="limitBolnickih"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — bolnički dan</label><input type="number" step="0.01" class="form-control" id="limitBolnickiDan"></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Auto ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redAuto">
+                            <h6 class="text-muted">Auto osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Vozilo *</label><select class="form-select" id="voziloId"></select></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Bonus-malus klasa</label><input class="form-control" id="bonusMalusKlasa"></div>
+                                <div class="col mb-2"><label class="form-label">Teritorijalno važenje</label>
+                                    <select class="form-select" id="teritorijalnoVazenje">
+                                        <option value="SRBIJA">Srbija</option>
+                                        <option value="REGION">Region</option>
+                                        <option value="EVROPA">Evropa</option>
+                                        <option value="SVET">Svet</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-2"><label class="form-label">Dodatni vozači</label><select class="form-select" id="vozaci" multiple size="4"></select>
+                                <div class="form-text">Ctrl/Cmd + klik za više izbora.</div></div>
+                        </div>
+
+                        <!-- ---------- Putno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redPutno">
+                            <h6 class="text-muted">Putno osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Destinacije</label><input class="form-control" id="destinacije"></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Datum polaska *</label><input type="date" class="form-control" id="datumPolaska"></div>
+                                <div class="col mb-2"><label class="form-label">Datum povratka *</label><input type="date" class="form-control" id="datumPovratka"></div>
+                            </div>
+                            <div class="mb-2"><label class="form-label">Osigurana lica</label><select class="form-select" id="osiguranaLica" multiple size="4"></select>
+                                <div class="form-text">Ctrl/Cmd + klik za više izbora.</div></div>
+                        </div>
+
+                        <!-- ---------- Imovinsko ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redImovinsko">
+                            <h6 class="text-muted">Imovinsko osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Vrste rizika</label><input class="form-control" id="vrsteRizika" placeholder="npr. Požar, poplava, krađa"></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Nekretnine</label><select class="form-select" id="nekretnine" multiple size="4"></select></div>
+                                <div class="col mb-2"><label class="form-label">Pokretna imovina</label><select class="form-select" id="pokretnaImovina" multiple size="4"></select></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Poljoprivredno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redPoljoprivredno">
+                            <h6 class="text-muted">Poljoprivredno osiguranje</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Usevi</label><select class="form-select" id="usevi" multiple size="4"></select></div>
+                                <div class="col mb-2"><label class="form-label">Životinje</label><select class="form-select" id="zivotinje" multiple size="4"></select></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Odgovornost ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redOdgovornost">
+                            <h6 class="text-muted">Osiguranje od odgovornosti</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Vrsta odgovornosti</label><input class="form-control" id="vrstaOdgovornosti"></div>
+                                <div class="col mb-2"><label class="form-label">Limit odgovornosti</label><input type="number" step="0.01" class="form-control" id="limitOdgovornosti"></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Specijalizovano ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="redSpecijalizacija">
+                            <h6 class="text-muted">Specijalizovano osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Naziv specijalizacije *</label><input class="form-control" id="nazivSpecijalizacije"></div>
+                            <div class="mb-2"><label class="form-label">Opis uslova</label><textarea class="form-control" id="opisUslova" rows="2"></textarea></div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
@@ -111,9 +200,9 @@
         </div>
     </div>
 
-    <!-- Modal: izmeni polisu (isto kao WinForms IzmeniPolisaForma) -->
+    <!-- Modal: izmeni polisu (isto kao WinForms IzmeniPolisaForma, dopunjeno tip-specificnim poljima) -->
     <div class="modal fade" id="modalIzmeni" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <form id="formaIzmeni">
                     <div class="modal-header"><h5 class="modal-title" id="izmeniNaslov">Izmeni polisu</h5>
@@ -127,7 +216,11 @@
                             <div class="col mb-2"><label class="form-label">Datum početka *</label><input type="date" class="form-control" id="ezDatumPocetka" required></div>
                             <div class="col mb-2"><label class="form-label">Datum isteka *</label><input type="date" class="form-control" id="ezDatumIsteka" required></div>
                         </div>
-                        <div class="mb-2"><label class="form-label">Premija *</label><input type="number" step="0.01" class="form-control" id="ezPremija" required></div>
+                        <div class="row">
+                            <div class="col mb-2"><label class="form-label">Premija *</label><input type="number" step="0.01" class="form-control" id="ezPremija" required></div>
+                            <div class="col mb-2"><label class="form-label">Valuta</label>
+                                <select class="form-select" id="ezValuta"><option>RSD</option><option>EUR</option><option>USD</option></select></div>
+                        </div>
                         <div class="mb-2"><label class="form-label">Način plaćanja</label>
                             <select class="form-select" id="ezNacin">
                                 <option value="JEDNOKRATNO">Jednokratno</option>
@@ -146,6 +239,98 @@
                                 <option value="OBNOVLJENA">Obnovljena</option>
                             </select>
                         </div>
+
+                        <!-- ---------- Zivotno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedZivotno">
+                            <h6 class="text-muted">Životno osiguranje</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Suma osiguranja *</label><input type="number" step="0.01" class="form-control" id="ezSumaOsiguranja"></div>
+                                <div class="col mb-2"><label class="form-label">Tip isplate</label>
+                                    <select class="form-select" id="ezTipIsplate">
+                                        <option value="JEDNOKRATNA">Jednokratna</option>
+                                        <option value="MESECNA_RENTA">Mesečna renta</option>
+                                        <option value="KOMBINOVANA">Kombinovana</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Zdravstveno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedZdravstveno">
+                            <h6 class="text-muted">Zdravstveno osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Mreža ustanova</label><input class="form-control" id="ezMrezaUstanova"></div>
+                            <div class="mb-2"><label class="form-label">Obuhvaćena pokrića</label><textarea class="form-control" id="ezPokrica" rows="2"></textarea></div>
+                            <div class="row">
+                                <div class="col-6 mb-2"><label class="form-label">Limit — specijalisti</label><input type="number" step="0.01" class="form-control" id="ezLimitSpecijalista"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — stomatolog</label><input type="number" step="0.01" class="form-control" id="ezLimitStomatologa"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — bolničke intervencije</label><input type="number" step="0.01" class="form-control" id="ezLimitBolnickih"></div>
+                                <div class="col-6 mb-2"><label class="form-label">Limit — bolnički dan</label><input type="number" step="0.01" class="form-control" id="ezLimitBolnickiDan"></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Auto ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedAuto">
+                            <h6 class="text-muted">Auto osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Vozilo *</label><select class="form-select" id="ezVoziloId"></select></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Bonus-malus klasa</label><input class="form-control" id="ezBonusMalusKlasa"></div>
+                                <div class="col mb-2"><label class="form-label">Teritorijalno važenje</label>
+                                    <select class="form-select" id="ezTeritorijalnoVazenje">
+                                        <option value="SRBIJA">Srbija</option>
+                                        <option value="REGION">Region</option>
+                                        <option value="EVROPA">Evropa</option>
+                                        <option value="SVET">Svet</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-2"><label class="form-label">Dodatni vozači</label><select class="form-select" id="ezVozaci" multiple size="4"></select></div>
+                        </div>
+
+                        <!-- ---------- Putno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedPutno">
+                            <h6 class="text-muted">Putno osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Destinacije</label><input class="form-control" id="ezDestinacije"></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Datum polaska *</label><input type="date" class="form-control" id="ezDatumPolaska"></div>
+                                <div class="col mb-2"><label class="form-label">Datum povratka *</label><input type="date" class="form-control" id="ezDatumPovratka"></div>
+                            </div>
+                            <div class="mb-2"><label class="form-label">Osigurana lica</label><select class="form-select" id="ezOsiguranaLica" multiple size="4"></select></div>
+                        </div>
+
+                        <!-- ---------- Imovinsko ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedImovinsko">
+                            <h6 class="text-muted">Imovinsko osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Vrste rizika</label><input class="form-control" id="ezVrsteRizika"></div>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Nekretnine</label><select class="form-select" id="ezNekretnine" multiple size="4"></select></div>
+                                <div class="col mb-2"><label class="form-label">Pokretna imovina</label><select class="form-select" id="ezPokretnaImovina" multiple size="4"></select></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Poljoprivredno ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedPoljoprivredno">
+                            <h6 class="text-muted">Poljoprivredno osiguranje</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Usevi</label><select class="form-select" id="ezUsevi" multiple size="4"></select></div>
+                                <div class="col mb-2"><label class="form-label">Životinje</label><select class="form-select" id="ezZivotinje" multiple size="4"></select></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Odgovornost ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedOdgovornost">
+                            <h6 class="text-muted">Osiguranje od odgovornosti</h6>
+                            <div class="row">
+                                <div class="col mb-2"><label class="form-label">Vrsta odgovornosti</label><input class="form-control" id="ezVrstaOdgovornosti"></div>
+                                <div class="col mb-2"><label class="form-label">Limit odgovornosti</label><input type="number" step="0.01" class="form-control" id="ezLimitOdgovornosti"></div>
+                            </div>
+                        </div>
+
+                        <!-- ---------- Specijalizovano ---------- -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedSpecijalizacija">
+                            <h6 class="text-muted">Specijalizovano osiguranje</h6>
+                            <div class="mb-2"><label class="form-label">Naziv specijalizacije *</label><input class="form-control" id="ezNazivSpecijalizacije"></div>
+                            <div class="mb-2"><label class="form-label">Opis uslova</label><textarea class="form-control" id="ezOpisUslova" rows="2"></textarea></div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
@@ -157,17 +342,122 @@
     </div>
 
     <!-- Offcanvas: detalji polise + akcije -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="offDetalji" style="width:400px;">
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="offDetalji" style="width:420px;">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="detaljiNaziv">Detalji polise</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column">
-            <div class="d-flex gap-2 mb-3 pb-3 border-bottom">
+            <div class="d-flex gap-2 mb-2 flex-wrap pb-2" id="detaljiAkcije">
                 <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
                 <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
             </div>
+            <div class="d-flex gap-2 mb-2 flex-wrap">
+                <button class="btn btn-osig-narandzasta flex-fill" id="btnDetaljiPokrica">📎 Dodatna pokrića</button>
+                <button class="btn btn-osig-plava-tamna flex-fill" id="btnDetaljiIstorija">🕘 Istorija</button>
+            </div>
+            <div class="d-flex gap-2 mb-2 d-none" id="redKorisnici">
+                <button class="btn btn-osig-siva flex-fill" id="btnDetaljiKorisnici">💰 Korisnici isplate</button>
+            </div>
+            <hr class="mt-0 mb-3">
             <div id="detaljiSadrzaj" class="flex-grow-1"><p class="text-muted">Učitavanje...</p></div>
+        </div>
+    </div>
+
+    <!-- Modal: korisnici isplate (samo za zivotno osiguranje) -->
+    <div class="modal fade" id="modalKorisnici" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="korisniciNaslov">Korisnici isplate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div id="greskaKorisnici" class="greska-box d-none"></div>
+                    <p class="text-muted" style="font-size:.82rem;">Zbir procenata udela svih korisnika treba da bude 100%.</p>
+                    <table class="table table-sm table-hover mb-3">
+                        <thead>
+                            <tr>
+                                <th>Klijent</th>
+                                <th>Procenat udela</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyKorisnici"></tbody>
+                    </table>
+                    <form id="formaKorisnik" class="d-flex gap-2 align-items-end flex-wrap">
+                        <div class="flex-grow-1"><label class="form-label mb-1">Klijent *</label><select class="form-select" id="kiKlijentId" required></select></div>
+                        <div><label class="form-label mb-1">Procenat udela *</label><input type="number" step="0.01" min="0.01" max="100" class="form-control" id="kiProcenat" style="width:130px;" required></div>
+                        <button type="submit" class="btn btn-osig">➕ Dodaj</button>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: dodatna pokrica (dostupno za svaku polisu) -->
+    <div class="modal fade" id="modalPokrica" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="pokricaNaslov">Dodatna pokrića</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div id="greskaPokrica" class="greska-box d-none"></div>
+                    <table class="table table-sm table-hover mb-3">
+                        <thead>
+                            <tr>
+                                <th>Naziv</th>
+                                <th>Opis</th>
+                                <th>Limit</th>
+                                <th>Franšiza (%)</th>
+                                <th>Dodatna premija</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyPokrica"></tbody>
+                    </table>
+                    <form id="formaPokrice" class="row g-2 align-items-end">
+                        <div class="col-md-3"><label class="form-label mb-1">Naziv *</label><input class="form-control" id="pkNaziv" required></div>
+                        <div class="col-md-3"><label class="form-label mb-1">Opis</label><input class="form-control" id="pkOpis"></div>
+                        <div class="col-md-2"><label class="form-label mb-1">Limit</label><input type="number" step="0.01" class="form-control" id="pkLimit"></div>
+                        <div class="col-md-2"><label class="form-label mb-1">Franšiza (%)</label><input type="number" step="0.01" min="0" max="100" class="form-control" id="pkFransiza" value="0"></div>
+                        <div class="col-md-1"><label class="form-label mb-1">Premija</label><input type="number" step="0.01" class="form-control" id="pkPremija" value="0"></div>
+                        <div class="col-md-1"><button type="submit" class="btn btn-osig w-100">➕</button></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: istorija polise (izmene/obnove/raskidi/mirovanja) - samo za citanje -->
+    <div class="modal fade" id="modalIstorija" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="istorijaNaslov">Istorija polise</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div id="greskaIstorija" class="greska-box d-none"></div>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Datum</th>
+                                <th>Vrsta promene</th>
+                                <th>Opis</th>
+                                <th>Izmenio</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyIstorija"></tbody>
+                    </table>
+                    <p class="text-muted mt-2 mb-0" id="istorijaPrazno" style="display:none;">Nema zabeleženih izmena.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
+                </div>
+            </div>
         </div>
     </div>
 

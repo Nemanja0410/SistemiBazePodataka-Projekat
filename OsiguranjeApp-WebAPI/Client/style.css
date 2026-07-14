@@ -42,7 +42,51 @@ body {
 }
 .btn-osig-crvena:hover { background: #922b21; color: #fff; }
 
-table.table thead { background: var(--plava); color: #fff; }
+.btn-osig-siva {
+    background: var(--siva);
+    color: #fff;
+    border: none;
+}
+.btn-osig-siva:hover { background: #5f5f5f; color: #fff; }
+
+.btn-osig-narandzasta {
+    background: var(--narandzasta);
+    color: #fff;
+    border: none;
+}
+.btn-osig-narandzasta:hover { background: #c8690f; color: #fff; }
+
+.btn-osig-plava-tamna {
+    background: var(--plava);
+    color: #fff;
+    border: none;
+}
+.btn-osig-plava-tamna:hover { background: #142c48; color: #fff; }
+
+.dropdown-menu-akcije {
+    min-width: 110px;
+    padding: .25rem;
+    font-size: .74rem;
+}
+.dropdown-menu-akcije .dropdown-item {
+    border-radius: 4px;
+    padding: .2rem .45rem;
+    margin-bottom: 1px;
+    font-size: .74rem;
+}
+.dropdown-menu-akcije .dropdown-item:last-child { margin-bottom: 0; }
+.dropdown-menu-akcije .dropdown-item:hover,
+.dropdown-menu-akcije .dropdown-item:focus { filter: brightness(0.9); }
+
+/* Bootstrap boji svaku th/td celiju posebno preko --bs-table-bg/--bs-table-color
+   promenljivih, pa obican background/color na <thead> ne bi bio vidljiv - moraju
+   se prepisati te promenljive da bi se ispravno prenele na decu (th). */
+table.table thead {
+    --bs-table-bg: var(--plava);
+    --bs-table-color: #fff;
+    background: var(--plava);
+    color: #fff;
+}
 table.table thead th { border: none; }
 
 th.sortable {
@@ -62,9 +106,19 @@ th.sortable.sort-aktivno .strelica { opacity: 1; }
     color: #fff;
     display: inline-block;
 }
-.status-aktivan, .status-aktivna, .status-odobren, .status-uspesno { background: var(--zelena); }
-.status-neaktivan, .status-blokiran, .status-odbijen, .status-zakljucan, .status-raskinuta { background: var(--crvena); }
-.status-na_cekanju, .status-u_obradi, .status-prijavljena { background: var(--narandzasta); }
+.status-aktivan, .status-aktivna, .status-odobren, .status-odobrena, .status-uspesno { background: var(--zelena); }
+.status-obnovljena, .status-isplacena { background: #16a085; }
+.status-blokiran, .status-odbijen, .status-odbijena, .status-zakljucan { background: var(--crvena); }
+.status-neaktivan, .status-raskinuta { background: #a15c50; }
+.status-istekla, .status-zatvorena { background: var(--siva); }
+.status-na_cekanju, .status-u_obradi, .status-mirovanje, .status-suspendovan, .status-u_toku { background: var(--narandzasta); }
+.status-potrebna_dopuna { background: #8e44ad; }
+.status-prijavljena { background: var(--plava-svetla); }
+.status-u_proceni { background: #8e44ad; }
+.status-izmena { background: var(--plava-svetla); }
+.status-obnova { background: #16a085; }
+.status-raskid { background: var(--crvena); }
+.status-reaktivacija { background: var(--zelena); }
 
 .greska-box {
     background: #fdecea;

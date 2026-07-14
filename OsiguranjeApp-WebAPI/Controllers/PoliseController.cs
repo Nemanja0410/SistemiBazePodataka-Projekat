@@ -18,9 +18,9 @@ namespace OsiguranjApp.Controllers
 
         // GET api/polise/5
         [HttpGet("{id:int}")]
-        public ActionResult<PolisaBasic> VratiJednu(int id)
+        public ActionResult<object> VratiJednu(int id)
         {
-            return Ok(DTOManager.vratiPolisu(id));
+            return Ok(DTOManager.vratiPolisuDetaljno(id));
         }
 
         // POST api/polise  (bazna polisa, bez specificnih polja podtipa)

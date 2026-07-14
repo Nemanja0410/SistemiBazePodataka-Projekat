@@ -34,7 +34,7 @@ namespace OsiguranjApp.Forme
             bool jePravnik     = _osoblje.TipOsoblja == "PRAVNIK";
             bool jeProcenitelj = _osoblje.TipOsoblja == "PROCENITELJ";
 
-            tbl = UiHelper.NapraviLayout(9);
+            tbl = UiHelper.NapraviLayout(10);
 
             txtIme     = UiHelper.DodajRed(tbl, 0, "Ime *:");
             txtPrezime = UiHelper.DodajRed(tbl, 1, "Prezime *:");
@@ -46,7 +46,9 @@ namespace OsiguranjApp.Forme
 
             cmbTipPravnika = UiHelper.DodajComboRed(tbl, 6, "Tip pravnika:");
             cmbTipPravnika.Items.AddRange(new[] { "INTERNI", "EKSTERNI" });
-            txtBarBroj = UiHelper.DodajRed(tbl, 7, "Broj advokata:");
+            txtBarBroj     = UiHelper.DodajRed(tbl, 7, "Broj advokata:");
+            txtBrojLicence = UiHelper.DodajRed(tbl, 8, "Broj licence:");
+
             cmbTipPravnika.Visible = jePravnik;
             txtBarBroj.Visible     = jePravnik;
             tbl.GetControlFromPosition(0, 6)!.Visible = jePravnik;
@@ -54,12 +56,11 @@ namespace OsiguranjApp.Forme
             tbl.RowStyles[6].Height = jePravnik ? 36 : 0;
             tbl.RowStyles[7].Height = jePravnik ? 36 : 0;
 
-            txtBrojLicence = UiHelper.DodajRed(tbl, 6, "Broj licence:");
             txtBrojLicence.Visible = jeProcenitelj;
-            tbl.GetControlFromPosition(0, 6)!.Visible = jeProcenitelj || jePravnik;
-            if (jeProcenitelj) tbl.RowStyles[6].Height = 36;
+            tbl.GetControlFromPosition(0, 8)!.Visible = jeProcenitelj;
+            tbl.RowStyles[8].Height = jeProcenitelj ? 36 : 0;
 
-            var (btnOk, btnCancel) = UiHelper.DodajDugmadPanel(tbl, 8);
+            var (btnOk, btnCancel) = UiHelper.DodajDugmadPanel(tbl, 9);
             btnSacuvaj  = btnOk;
             btnOdustani = btnCancel;
             btnSacuvaj.Click  += BtnSacuvaj_Click;
@@ -67,10 +68,9 @@ namespace OsiguranjApp.Forme
 
             this.Controls.Add(tbl);
 
-            int visina = 300;
-            if (jePravnik) visina += 72;
-            if (jeProcenitelj) visina += 36;
-            this.Height = visina;
+            int sadrzajVisina = 0;
+            foreach (RowStyle rs in tbl.RowStyles) sadrzajVisina += (int)rs.Height;
+            this.ClientSize = new Size(450, sadrzajVisina + tbl.Padding.Top + tbl.Padding.Bottom);
         }
 
         private void PopuniFormu()

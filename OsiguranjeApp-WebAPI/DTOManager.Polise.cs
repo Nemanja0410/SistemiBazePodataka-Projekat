@@ -60,6 +60,43 @@ namespace OsiguranjApp
             return dto;
         }
 
+        // vratiPolisuDetaljno: isto kao vratiPolisu, ali vraca konkretan podtip (AutoPolisaPregled,
+        // ZivotnoPregled itd.) sa svim tip-specificnim poljima, ne samo bazna. Get (ne Load) je
+        // neophodan da bi runtime tip bio tacan pre "is"/switch provere (isti razlog kao kod
+        // vratiKlijentaDetaljno). Povratni tip je object da System.Text.Json serijalizuje po
+        // stvarnom (podklasnom) tipu, ne po deklarisanom.
+        public static object vratiPolisuDetaljno(int id)
+        {
+            ISession s = DataLayer.GetSession();
+            Polisa? p = s.Get<Polisa>(id);
+            if (p == null) { s.Close(); throw new NHibernate.ObjectNotFoundException(id, typeof(Polisa).Name); }
+
+            PolisaPregled rezultat = p switch
+            {
+                AutoOsiguranje a => mapAutoPolisaPregled(a),
+                ZivotnoOsiguranje z => mapZivotnoPregled(z),
+                ZdravstvenoOsiguranje zd => mapZdravstvenoPregled(zd),
+                PutnoOsiguranje pu => mapPutnoPregled(pu),
+                ImovinskOsiguranje im => mapImovinskoPregled(im),
+                PoljoprivrednoOsiguranje polj => mapPoljoprivrednoPregled(polj),
+                OsiguranjeOdgovornosti od => mapOdgovornostPregled(od),
+                SpecijalizovanoOsiguranje sp => mapSpecijalizovanoPregled(sp),
+                _ => mapPolisaPregled(p)
+            };
+
+            foreach (var dp in p.DodatnaPokrića)
+                rezultat.DodatnaPokrića.Add(new DodatnoPokrBasic
+                {
+                    PokriceId = dp.PokriceId, PolisaId = p.PolisaId,
+                    Naziv = dp.Naziv, Opis = dp.Opis,
+                    LimitPokrića = dp.LimitPokrića, Fransiza = dp.Fransiza,
+                    DodatnaPremija = dp.DodatnaPremija
+                });
+
+            s.Close();
+            return rezultat;
+        }
+
         public static void dodajPolisu(PolisaBasic dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");

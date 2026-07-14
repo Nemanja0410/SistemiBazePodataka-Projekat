@@ -16,6 +16,7 @@ namespace OsiguranjApp.Entiteti
         public virtual string?  Lokacija{ get; set; }
         public virtual string?  Status{ get; set; }
         public virtual decimal? ProcenjeniIznos { get; set; }
+        public virtual string?  Valuta { get; set; }
         public virtual Agent? Agent  { get; set; }
 
         public virtual IList<FazaObrade>  FazeObrade  { get; set; }

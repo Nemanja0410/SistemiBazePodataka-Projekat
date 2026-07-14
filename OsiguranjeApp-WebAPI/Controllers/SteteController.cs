@@ -18,9 +18,9 @@ namespace OsiguranjApp.Controllers
 
         // GET api/stete/5
         [HttpGet("{id:int}")]
-        public ActionResult<StetaBasic> VratiJednu(int id)
+        public ActionResult<object> VratiJednu(int id)
         {
-            return Ok(DTOManager.vratiStetu(id));
+            return Ok(DTOManager.vratiStetuDetaljno(id));
         }
 
         // POST api/stete  (bazna steta, bez specificnih polja podtipa)

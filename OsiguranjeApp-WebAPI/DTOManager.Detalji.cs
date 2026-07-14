@@ -558,15 +558,23 @@ namespace OsiguranjApp
             catch (Exception) { throw; }
         }
 
-        private static ProcenaStetaBasic mapProcenaStetaBasic(ProcenaStete p) => new ProcenaStetaBasic
+        private static ProcenaStetaBasic mapProcenaStetaBasic(ProcenaStete p)
         {
-            ProcenaId = p.ProcenaId, StetaId = p.Steta?.StetaId ?? 0,
-            DatumProc = p.DatumProc,
-            ProceniteljId = p.Procenitelj?.OsobljeId ?? 0,
-            ProceniteljIme = p.Procenitelj != null ? $"{p.Procenitelj.Ime} {p.Procenitelj.Prezime}" : null,
-            MetodProc = p.MetodProc, Nalaz = p.Nalaz,
-            ProcenjeniIznos = p.ProcenjeniIznos, Preporuka = p.Preporuka
-        };
+            var dto = new ProcenaStetaBasic
+            {
+                ProcenaId = p.ProcenaId, StetaId = p.Steta?.StetaId ?? 0,
+                DatumProc = p.DatumProc,
+                ProceniteljId = p.Procenitelj?.OsobljeId ?? 0,
+                ProceniteljIme = p.Procenitelj != null ? $"{p.Procenitelj.Ime} {p.Procenitelj.Prezime}" : null,
+                ProceniteljBrojLicence = p.Procenitelj?.BrojLicence,
+                MetodProc = p.MetodProc, Nalaz = p.Nalaz,
+                ProcenjeniIznos = p.ProcenjeniIznos, Preporuka = p.Preporuka
+            };
+            if (p.Procenitelj != null)
+                foreach (var ob in p.Procenitelj.OblasiProc)
+                    if (ob.Oblast != null) dto.ProceniteljOblasti.Add(ob.Oblast);
+            return dto;
+        }
 
         // ---------- KorisnikIsplate ----------
 

@@ -81,10 +81,9 @@ namespace OsiguranjApp.Forme
             tbl.GetControlFromPosition(0, 10)!.Visible = jeProcenitelj;
             tbl.RowStyles[10].Height = jeProcenitelj ? 36 : 0;
 
-            int visina = 430;
-            if (jePravnik) visina += 72;
-            if (jeProcenitelj) visina += 36;
-            this.Height = visina;
+            int sadrzajVisina = 0;
+            foreach (RowStyle rs in tbl.RowStyles) sadrzajVisina += (int)rs.Height;
+            this.ClientSize = new Size(450, sadrzajVisina + tbl.Padding.Top + tbl.Padding.Bottom);
         }
 
         private void BtnSacuvaj_Click(object? sender, EventArgs e)

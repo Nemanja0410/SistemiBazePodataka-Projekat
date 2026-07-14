@@ -2,11 +2,20 @@ zahtevajPrijavu();
 ucitajNavigaciju("klijenti");
 
 const greska = document.getElementById("greska");
+// Isto kao WinForms KlijentiForma._samoPregled: samo ADMIN/AGENT smeju da menjaju, ostali su read-only.
+const smeUpis = Auth.imaUlogu("ADMIN", "AGENT");
 let debounceId = null;
 let odabran = null;
 let trenutnaLista = [];
 const offDetalji = new bootstrap.Offcanvas(document.getElementById("offDetalji"));
 const modalIzmeni = new bootstrap.Modal(document.getElementById("modalIzmeni"));
+
+if (!smeUpis) {
+    document.getElementById("dropDodaj").style.display = "none";
+    // detaljiAkcije ima Bootstrap klasu d-flex (display:flex !important u stylesheet-u),
+    // koja pobedi obican inline style bez !important - zato mora setProperty sa "important".
+    document.getElementById("detaljiAkcije").style.setProperty("display", "none", "important");
+}
 
 function pill(status) {
     const klasa = "status-" + (status || "").toLowerCase();
@@ -47,23 +56,25 @@ function prikaziKlijente(lista) {
             <td class="text-end"></td>
         `;
 
-        const btnIzmeni = document.createElement("button");
-        btnIzmeni.className = "btn btn-sm btn-osig-plava me-1";
-        btnIzmeni.textContent = "Izmeni";
-        btnIzmeni.onclick = (e) => { e.stopPropagation(); otvoriIzmeni(k); };
+        if (smeUpis) {
+            const btnIzmeni = document.createElement("button");
+            btnIzmeni.className = "btn btn-sm btn-osig-plava me-1";
+            btnIzmeni.textContent = "Izmeni";
+            btnIzmeni.onclick = (e) => { e.stopPropagation(); otvoriIzmeni(k); };
 
-        const btnObrisi = document.createElement("button");
-        btnObrisi.className = "btn btn-sm btn-osig-crvena";
-        btnObrisi.textContent = "Obriši";
-        btnObrisi.onclick = async (e) => {
-            e.stopPropagation();
-            if (!confirm(`Obrisati klijenta "${k.naziv}"? Ovo briše i sve njegove polise i štete.`)) return;
-            try { await apiFetch(`/klijenti/${k.klijentId}`, { method: "DELETE" }); ucitajKlijente(); }
-            catch (err) { prikaziGresku(greska, err); }
-        };
+            const btnObrisi = document.createElement("button");
+            btnObrisi.className = "btn btn-sm btn-osig-crvena";
+            btnObrisi.textContent = "Obriši";
+            btnObrisi.onclick = async (e) => {
+                e.stopPropagation();
+                if (!confirm(`Obrisati klijenta "${k.naziv}"? Ovo briše i sve njegove polise i štete.`)) return;
+                try { await apiFetch(`/klijenti/${k.klijentId}`, { method: "DELETE" }); ucitajKlijente(); }
+                catch (err) { prikaziGresku(greska, err); }
+            };
 
-        tr.lastElementChild.appendChild(btnIzmeni);
-        tr.lastElementChild.appendChild(btnObrisi);
+            tr.lastElementChild.appendChild(btnIzmeni);
+            tr.lastElementChild.appendChild(btnObrisi);
+        }
         tr.addEventListener("click", () => otvoriDetalje(k));
         tbody.appendChild(tr);
     }

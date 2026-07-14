@@ -1,7 +1,10 @@
 zahtevajPrijavu();
 ucitajNavigaciju("pocetna");
 
-if (Auth.imaUlogu("ADMIN")) document.getElementById("kartNalozi").style.display = "block";
+if (Auth.imaUlogu("ADMIN")) {
+    document.getElementById("kartNalozi").style.display = "block";
+    document.getElementById("kartOsoblje").style.display = "block";
+}
 
 async function ucitajStatistiku() {
     const greska = document.getElementById("greska");
