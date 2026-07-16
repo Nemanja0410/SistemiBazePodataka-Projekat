@@ -15,7 +15,7 @@ namespace OsiguranjApp
         private static Polisa popuniBazuPolise(Polisa p, PolisaPregled dto, ISession s)
         {
             p.BrojPolise = dto.BrojPolise;
-            p.DatumZakljucenja = DateTime.Today;
+            if (p.PolisaId == 0) p.DatumZakljucenja = DateTime.Today; // samo pri kreiranju, ne pri izmeni
             p.DatumPocetka = dto.DatumPocetka;
             p.DatumIsteka = dto.DatumIsteka;
             p.Status = dto.Status ?? "AKTIVNA";
@@ -27,24 +27,81 @@ namespace OsiguranjApp
             return p;
         }
 
+        // Snimak zajednickih polja polise pre izmene - hvata se odmah posle s.Load, pre nego
+        // sto popuniBazuPolise prepise vrednosti, da bi ZabelezIstorijuPromene mogla da napravi
+        // detaljan opis "staro -> novo" umesto generickog "Izmena podataka polise".
+        private readonly struct StaroStanjePolise
+        {
+            public string? Status { get; init; }
+            public decimal OsnovnaPremija { get; init; }
+            public string? Valuta { get; init; }
+            public string? NacinPlacanja { get; init; }
+            public int? AgentId { get; init; }
+            public string? AgentIme { get; init; }
+            public DateTime DatumIsteka { get; init; }
+        }
+
+        private static StaroStanjePolise UhvatiStaroStanjePolise(Polisa p) => new()
+        {
+            Status = p.Status, OsnovnaPremija = p.OsnovnaPremija, Valuta = p.Valuta,
+            NacinPlacanja = p.NacinPlacanja, AgentId = p.Agent?.OsobljeId,
+            AgentIme = p.Agent != null ? $"{p.Agent.Ime} {p.Agent.Prezime}" : null,
+            DatumIsteka = p.DatumIsteka
+        };
+
+        // Poredi staru i novu listu ID-jeva povezanih entiteta (npr. nekretnine na Imovinskom
+        // osiguranju) i vraca citljiv opis sta je dodato/uklonjeno, ili null ako nema promene.
+        private static string? DiffPovezanihEntiteta<T>(ISession s, string naziv, IList<int> stareIds, IList<int> noveIds) where T : class
+        {
+            var staroSet = stareIds.ToHashSet();
+            var novoSet = noveIds.ToHashSet();
+            var dodatiIds = novoSet.Except(staroSet).ToList();
+            var uklonjeniIds = staroSet.Except(novoSet).ToList();
+            if (dodatiIds.Count == 0 && uklonjeniIds.Count == 0) return null;
+
+            var delovi = new List<string>();
+            if (dodatiIds.Count > 0)
+                delovi.Add("dodato: " + string.Join(", ", dodatiIds.Select(id => s.Get<T>(id)?.ToString() ?? $"#{id}")));
+            if (uklonjeniIds.Count > 0)
+                delovi.Add("uklonjeno: " + string.Join(", ", uklonjeniIds.Select(id => s.Get<T>(id)?.ToString() ?? $"#{id}")));
+            return $"{naziv}: {string.Join("; ", delovi)}";
+        }
+
         // Belezi jedan red u ISTORIJA_POLISE pri svakoj izmeni postojece polise (poziva se samo iz
         // azurirajXOsiguranje metoda, ne i iz dodajXOsiguranje - istorija prati promene, ne nastanak).
-        // Tip promene se izvodi iz stare/nove vrednosti statusa; ako se status nije promenio i dalje
-        // se beleži generalna IZMENA, jer zadatak trazi da se prate i obicne izmene podataka polise.
-        private static void ZabelezIstorijuPromene(ISession s, Polisa p, string? stariStatus)
+        // Tip promene se izvodi iz stare/nove vrednosti statusa; opis poredi sva zajednicka polja
+        // (ne samo status) da bi se videlo tacno sta je promenjeno, ne samo da JE nesto promenjeno.
+        // dodatnePromene nosi opise tip-specificnih izmena predmeta osiguranja (vozilo, nekretnine...).
+        private static void ZabelezIstorijuPromene(ISession s, Polisa p, StaroStanjePolise staro, IEnumerable<string>? dodatnePromene = null)
         {
-            string tip = (p.Status, stariStatus) switch
+            string tip = (p.Status, staro.Status) switch
             {
                 ("RASKINUTA", var stari) when stari != "RASKINUTA" => "RASKID",
                 ("MIROVANJE", var stari) when stari != "MIROVANJE" => "MIROVANJE",
                 ("OBNOVLJENA", var stari) when stari != "OBNOVLJENA" => "OBNOVA",
-                ("AKTIVNA", "MIROVANJE") => "REAKTIVACIJA",
-                ("AKTIVNA", "RASKINUTA") => "REAKTIVACIJA",
+                // Povratak u AKTIVNA iz bilo kog drugog statusa (MIROVANJE, RASKINUTA, ISTEKLA...) je reaktivacija.
+                ("AKTIVNA", var stari) when stari != "AKTIVNA" => "REAKTIVACIJA",
                 _ => "IZMENA"
             };
-            string opis = stariStatus != p.Status
-                ? $"Status promenjen: {stariStatus} -> {p.Status}"
-                : "Izmena podataka polise";
+
+            var promene = new List<string>();
+            if (staro.Status != p.Status)
+                promene.Add($"Status: {staro.Status} → {p.Status}");
+            if (staro.OsnovnaPremija != p.OsnovnaPremija || staro.Valuta != p.Valuta)
+                promene.Add($"Premija: {staro.OsnovnaPremija:0.##} {staro.Valuta} → {p.OsnovnaPremija:0.##} {p.Valuta}");
+            if (staro.NacinPlacanja != p.NacinPlacanja)
+                promene.Add($"Način plaćanja: {staro.NacinPlacanja} → {p.NacinPlacanja}");
+            if (staro.AgentId != p.Agent?.OsobljeId)
+            {
+                string noviAgentIme = p.Agent != null ? $"{p.Agent.Ime} {p.Agent.Prezime}" : "/";
+                promene.Add($"Agent: {staro.AgentIme ?? "/"} → {noviAgentIme}");
+            }
+            if (staro.DatumIsteka != p.DatumIsteka)
+                promene.Add($"Datum isteka: {staro.DatumIsteka:dd.MM.yyyy} → {p.DatumIsteka:dd.MM.yyyy}");
+            if (dodatnePromene != null)
+                promene.AddRange(dodatnePromene);
+
+            string opis = promene.Count > 0 ? string.Join("; ", promene) : "Izmena podataka polise";
             int? osobljeId = SesijaKorisnik.TrenutniNalog?.OsobljeId;
 
             s.Save(new IstorijaPolise
@@ -73,7 +130,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajAutoOsiguranje(AutoPolisaPregled dto)
+        public static int dodajAutoOsiguranje(AutoPolisaPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -92,6 +149,7 @@ namespace OsiguranjApp
                 s.Save(a);
                 s.Flush();
                 s.Close();
+                return a.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -103,7 +161,9 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 AutoOsiguranje a = s.Load<AutoOsiguranje>(dto.PolisaId);
-                string? stariStatus = a.Status;
+                var staro = UhvatiStaroStanjePolise(a);
+                int? staroVoziloId = a.Vozilo?.VoziloId;
+                var staroVoziciIds = a.Vozaci.Select(v => v.KlijentId).ToList();
                 popuniBazuPolise(a, dto, s);
                 a.Vozilo = s.Load<Vozilo>(dto.VoziloId);
                 a.BonusMalusKlasa = dto.BonusMalusKlasa;
@@ -111,7 +171,17 @@ namespace OsiguranjApp
                 a.Vozaci.Clear();
                 foreach (var klijentId in dto.VoziciIds)
                     a.Vozaci.Add(s.Load<Klijent>(klijentId));
-                ZabelezIstorijuPromene(s, a, stariStatus);
+
+                var dodatnePromene = new List<string>();
+                if (staroVoziloId != a.Vozilo?.VoziloId)
+                {
+                    string staroIme = staroVoziloId.HasValue ? s.Get<Vozilo>(staroVoziloId.Value)?.ToString() ?? "/" : "/";
+                    dodatnePromene.Add($"Vozilo: {staroIme} → {a.Vozilo?.ToString() ?? "/"}");
+                }
+                var vozaciDiff = DiffPovezanihEntiteta<Klijent>(s, "Vozači", staroVoziciIds, dto.VoziciIds);
+                if (vozaciDiff != null) dodatnePromene.Add(vozaciDiff);
+
+                ZabelezIstorijuPromene(s, a, staro, dodatnePromene);
                 s.SaveOrUpdate(a);
                 s.Flush();
                 s.Close();
@@ -147,7 +217,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajZivotnoOsiguranje(ZivotnoPregled dto)
+        public static int dodajZivotnoOsiguranje(ZivotnoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -163,6 +233,7 @@ namespace OsiguranjApp
                 s.Save(z);
                 s.Flush();
                 s.Close();
+                return z.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -174,11 +245,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ZivotnoOsiguranje z = s.Load<ZivotnoOsiguranje>(dto.PolisaId);
-                string? stariStatus = z.Status;
+                var staro = UhvatiStaroStanjePolise(z);
                 popuniBazuPolise(z, dto, s);
                 z.SumaOsiguranja = dto.SumaOsiguranja;
                 z.TipIsplate = dto.TipIsplate;
-                ZabelezIstorijuPromene(s, z, stariStatus);
+                ZabelezIstorijuPromene(s, z, staro);
                 s.SaveOrUpdate(z);
                 s.Flush();
                 s.Close();
@@ -212,7 +283,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajZdravstvenoOsiguranje(ZdravstvenoPregled dto)
+        public static int dodajZdravstvenoOsiguranje(ZdravstvenoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -232,6 +303,7 @@ namespace OsiguranjApp
                 s.Save(z);
                 s.Flush();
                 s.Close();
+                return z.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -243,7 +315,7 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ZdravstvenoOsiguranje z = s.Load<ZdravstvenoOsiguranje>(dto.PolisaId);
-                string? stariStatus = z.Status;
+                var staro = UhvatiStaroStanjePolise(z);
                 popuniBazuPolise(z, dto, s);
                 z.MrezaUstanova = dto.MrezaUstanova;
                 z.LimitSpecijalista = dto.LimitSpecijalista;
@@ -251,7 +323,7 @@ namespace OsiguranjApp
                 z.LimitBolnickih = dto.LimitBolnickih;
                 z.LimitBolnickiDan = dto.LimitBolnickiDan;
                 z.Pokrica = dto.Pokrica;
-                ZabelezIstorijuPromene(s, z, stariStatus);
+                ZabelezIstorijuPromene(s, z, staro);
                 s.SaveOrUpdate(z);
                 s.Flush();
                 s.Close();
@@ -287,7 +359,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajPutnoOsiguranje(PutnoPregled dto)
+        public static int dodajPutnoOsiguranje(PutnoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -306,6 +378,7 @@ namespace OsiguranjApp
                 s.Save(p);
                 s.Flush();
                 s.Close();
+                return p.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -317,7 +390,8 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 PutnoOsiguranje p = s.Load<PutnoOsiguranje>(dto.PolisaId);
-                string? stariStatus = p.Status;
+                var staro = UhvatiStaroStanjePolise(p);
+                var staroOsiguranaLicaIds = p.OsiguranaLica.Select(k => k.KlijentId).ToList();
                 popuniBazuPolise(p, dto, s);
                 p.Destinacije = dto.Destinacije;
                 p.DatumPolaska = dto.DatumPolaska;
@@ -325,7 +399,12 @@ namespace OsiguranjApp
                 p.OsiguranaLica.Clear();
                 foreach (var klijentId in dto.OsiguranaLicaIds)
                     p.OsiguranaLica.Add(s.Load<Klijent>(klijentId));
-                ZabelezIstorijuPromene(s, p, stariStatus);
+
+                var dodatnePromene = new List<string>();
+                var licaDiff = DiffPovezanihEntiteta<Klijent>(s, "Osigurana lica", staroOsiguranaLicaIds, dto.OsiguranaLicaIds);
+                if (licaDiff != null) dodatnePromene.Add(licaDiff);
+
+                ZabelezIstorijuPromene(s, p, staro, dodatnePromene);
                 s.SaveOrUpdate(p);
                 s.Flush();
                 s.Close();
@@ -360,7 +439,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajImovinskoOsiguranje(ImovinskoPregled dto)
+        public static int dodajImovinskoOsiguranje(ImovinskoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -379,6 +458,7 @@ namespace OsiguranjApp
                 s.Save(i);
                 s.Flush();
                 s.Close();
+                return i.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -390,7 +470,9 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 ImovinskOsiguranje i = s.Load<ImovinskOsiguranje>(dto.PolisaId);
-                string? stariStatus = i.Status;
+                var staro = UhvatiStaroStanjePolise(i);
+                var staroNekretnineIds = i.Nekretnine.Select(n => n.NekretninaId).ToList();
+                var staroPokretneImovineIds = i.PokretneImovine.Select(pi => pi.PokretnaImovinaId).ToList();
                 popuniBazuPolise(i, dto, s);
                 i.VrsteRizika = dto.VrsteRizika;
                 i.Nekretnine.Clear();
@@ -399,7 +481,14 @@ namespace OsiguranjApp
                 i.PokretneImovine.Clear();
                 foreach (var pokretnaId in dto.PokretneImovineIds)
                     i.PokretneImovine.Add(s.Load<PokretnaImovina>(pokretnaId));
-                ZabelezIstorijuPromene(s, i, stariStatus);
+
+                var dodatnePromene = new List<string>();
+                var nekretnineDiff = DiffPovezanihEntiteta<Nekretnina>(s, "Nekretnine", staroNekretnineIds, dto.NekretnineIds);
+                if (nekretnineDiff != null) dodatnePromene.Add(nekretnineDiff);
+                var pokretnaDiff = DiffPovezanihEntiteta<PokretnaImovina>(s, "Pokretna imovina", staroPokretneImovineIds, dto.PokretneImovineIds);
+                if (pokretnaDiff != null) dodatnePromene.Add(pokretnaDiff);
+
+                ZabelezIstorijuPromene(s, i, staro, dodatnePromene);
                 s.SaveOrUpdate(i);
                 s.Flush();
                 s.Close();
@@ -435,7 +524,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajPoljoprivrednoOsiguranje(PoljoprivrednoPregled dto)
+        public static int dodajPoljoprivrednoOsiguranje(PoljoprivrednoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -450,6 +539,7 @@ namespace OsiguranjApp
                 s.Save(p);
                 s.Flush();
                 s.Close();
+                return p.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -461,7 +551,9 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 PoljoprivrednoOsiguranje p = s.Load<PoljoprivrednoOsiguranje>(dto.PolisaId);
-                string? stariStatus = p.Status;
+                var staro = UhvatiStaroStanjePolise(p);
+                var staroUseviIds = p.Usevi.Select(u => u.UsevId).ToList();
+                var staroZivotinjeIds = p.Zivotinje.Select(z => z.ZivotinjaId).ToList();
                 popuniBazuPolise(p, dto, s);
                 p.Usevi.Clear();
                 foreach (var usevId in dto.UseviIds)
@@ -469,7 +561,14 @@ namespace OsiguranjApp
                 p.Zivotinje.Clear();
                 foreach (var zivotinjaId in dto.ZivotinjeIds)
                     p.Zivotinje.Add(s.Load<Zivotinja>(zivotinjaId));
-                ZabelezIstorijuPromene(s, p, stariStatus);
+
+                var dodatnePromene = new List<string>();
+                var useviDiff = DiffPovezanihEntiteta<Usev>(s, "Usevi", staroUseviIds, dto.UseviIds);
+                if (useviDiff != null) dodatnePromene.Add(useviDiff);
+                var zivotinjeDiff = DiffPovezanihEntiteta<Zivotinja>(s, "Životinje", staroZivotinjeIds, dto.ZivotinjeIds);
+                if (zivotinjeDiff != null) dodatnePromene.Add(zivotinjeDiff);
+
+                ZabelezIstorijuPromene(s, p, staro, dodatnePromene);
                 s.SaveOrUpdate(p);
                 s.Flush();
                 s.Close();
@@ -504,7 +603,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajOsiguranjeOdgovornosti(OdgovornostPregled dto)
+        public static int dodajOsiguranjeOdgovornosti(OdgovornostPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -520,6 +619,7 @@ namespace OsiguranjApp
                 s.Save(o);
                 s.Flush();
                 s.Close();
+                return o.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -531,11 +631,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 OsiguranjeOdgovornosti o = s.Load<OsiguranjeOdgovornosti>(dto.PolisaId);
-                string? stariStatus = o.Status;
+                var staro = UhvatiStaroStanjePolise(o);
                 popuniBazuPolise(o, dto, s);
                 o.VrstaOdgovornosti = dto.VrstaOdgovornosti;
                 o.LimitOdgovornosti = dto.LimitOdgovornosti;
-                ZabelezIstorijuPromene(s, o, stariStatus);
+                ZabelezIstorijuPromene(s, o, staro);
                 s.SaveOrUpdate(o);
                 s.Flush();
                 s.Close();
@@ -569,7 +669,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajSpecijalizovanoOsiguranje(SpecijalizovanoPregled dto)
+        public static int dodajSpecijalizovanoOsiguranje(SpecijalizovanoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -585,6 +685,7 @@ namespace OsiguranjApp
                 s.Save(sp);
                 s.Flush();
                 s.Close();
+                return sp.PolisaId;
             }
             catch (Exception) { throw; }
         }
@@ -596,11 +697,11 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 SpecijalizovanoOsiguranje sp = s.Load<SpecijalizovanoOsiguranje>(dto.PolisaId);
-                string? stariStatus = sp.Status;
+                var staro = UhvatiStaroStanjePolise(sp);
                 popuniBazuPolise(sp, dto, s);
                 sp.NazivSpecijalizacije = dto.NazivSpecijalizacije;
                 sp.OpisUslova = dto.OpisUslova;
-                ZabelezIstorijuPromene(s, sp, stariStatus);
+                ZabelezIstorijuPromene(s, sp, staro);
                 s.SaveOrUpdate(sp);
                 s.Flush();
                 s.Close();

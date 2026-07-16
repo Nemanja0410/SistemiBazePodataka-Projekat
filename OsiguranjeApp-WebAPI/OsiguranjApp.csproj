@@ -9,8 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- WinForms UI iz faze 2 ostaje na disku (referenca/istorija), ali se ne kompajlira u Web API projekat -->
-    <Compile Remove="Forme\**\*.cs" />
     <Compile Remove="obj\**\*.cs" />
     <Compile Remove="bin\**\*.cs" />
   </ItemGroup>

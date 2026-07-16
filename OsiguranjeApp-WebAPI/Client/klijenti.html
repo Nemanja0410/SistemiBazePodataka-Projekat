@@ -165,6 +165,23 @@
                                 <option value="BLOKIRAN">BLOKIRAN</option>
                             </select>
                         </div>
+
+                        <!-- Kontakt osobe (samo za pravna lica / javne institucije) -->
+                        <div class="d-none border-top pt-2 mt-2" id="ezRedKontakti">
+                            <label class="form-label mb-1">Kontakt osobe</label>
+                            <div id="greskaKontakti" class="greska-box d-none"></div>
+                            <table class="table table-sm mb-2">
+                                <tbody id="tbodyEzKontakti"></tbody>
+                            </table>
+                            <div class="row g-2">
+                                <div class="col-6"><input class="form-control form-control-sm" id="koIme" placeholder="Ime"></div>
+                                <div class="col-6"><input class="form-control form-control-sm" id="koPrezime" placeholder="Prezime"></div>
+                                <div class="col-6"><input class="form-control form-control-sm" id="koFunkcija" placeholder="Funkcija"></div>
+                                <div class="col-6"><input class="form-control form-control-sm" id="koTelefon" placeholder="Telefon"></div>
+                                <div class="col-9"><input type="email" class="form-control form-control-sm" id="koEmail" placeholder="Email"></div>
+                                <div class="col-3"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajKontakt">➕ Dodaj</button></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
@@ -182,7 +199,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column">
-            <div class="d-flex gap-2 mb-3 pb-3 border-bottom" id="detaljiAkcije">
+            <div class="d-flex gap-2 mb-2 flex-wrap pb-3 border-bottom" id="detaljiAkcije">
                 <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
                 <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
             </div>

@@ -74,7 +74,7 @@ namespace OsiguranjApp
             return dto;
         }
 
-        public static void dodajStetu(StetaBasic dto)
+        public static int dodajStetu(StetaBasic dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -94,8 +94,9 @@ namespace OsiguranjApp
                 s.Save(st);
                 s.Flush();
                 s.Close();
+                return st.StetaId;
             }
-            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); return 0; }
         }
 
         public static void azurirajStetu(StetaBasic dto)
@@ -173,6 +174,20 @@ namespace OsiguranjApp
                 f.Dokumentacija  = dto.Dokumentacija;
                 f.Napomena       = dto.Napomena;
                 s.SaveOrUpdate(f);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void obrisiFazuObrade(int id)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT", "LEKAR", "PRAVNIK", "PROCENITELJ");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                FazaObrade f = s.Load<FazaObrade>(id);
+                s.Delete(f);
                 s.Flush();
                 s.Close();
             }

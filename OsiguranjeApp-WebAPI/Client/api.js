@@ -2,6 +2,8 @@
 // upravlja JWT tokenom dobijenim sa POST /api/nalozi/prijava.
 
 const API_BASE = "http://localhost:5000/api";
+// Bazni URL bez "/api" - za pristup statickim fajlovima (npr. uploadovane fotografije steta).
+const API_ORIGIN = API_BASE.replace(/\/api$/, "");
 
 const Auth = {
     get token() { return localStorage.getItem("token"); },

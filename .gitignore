@@ -14,3 +14,6 @@ Thumbs.db
 
 ## Logs
 *.log
+
+## Uploadovane fotografije steta (runtime podaci, ne verzionisu se)
+OsiguranjeApp-WebAPI/Uploads/

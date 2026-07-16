@@ -157,7 +157,8 @@ namespace OsiguranjApp
                 ISession s = DataLayer.GetSession();
                 var u = new UlogaKlijenta
                 {
-                    Klijent = s.Load<Klijent>(dto.KlijentId),
+                    Klijent = dto.KlijentId.HasValue ? s.Load<Klijent>(dto.KlijentId.Value) : null,
+                    ImePrezime = dto.ImePrezime,
                     Polisa = s.Load<Polisa>(dto.PolisaId),
                     TipUloge = dto.TipUloge
                 };
@@ -200,7 +201,8 @@ namespace OsiguranjApp
         private static UlogaKlijentaBasic mapUlogaKlijentaBasic(UlogaKlijenta u) => new UlogaKlijentaBasic
         {
             UlogaId = u.UlogaId,
-            KlijentId = u.Klijent?.KlijentId ?? 0, KlijentNaziv = u.Klijent?.Naziv,
+            KlijentId = u.Klijent?.KlijentId, KlijentNaziv = u.Klijent?.Naziv,
+            ImePrezime = u.ImePrezime,
             PolisaId = u.Polisa?.PolisaId ?? 0, BrojPolise = u.Polisa?.BrojPolise,
             TipUloge = u.TipUloge
         };
@@ -588,7 +590,8 @@ namespace OsiguranjApp
                     lista.Add(new KorisnikIsplateBasic
                     {
                         KorisnikId = k.KorisnikId, PolisaId = k.Polisa?.PolisaId ?? 0,
-                        KlijentId = k.Klijent?.KlijentId ?? 0, KlijentNaziv = k.Klijent?.Naziv,
+                        KlijentId = k.Klijent?.KlijentId, KlijentNaziv = k.Klijent?.Naziv,
+                        ImePrezime = k.ImePrezime,
                         ProcenatUdela = k.ProcenatUdela
                     });
                 s.Close();
@@ -606,7 +609,8 @@ namespace OsiguranjApp
                 var k = new KorisnikIsplate
                 {
                     Polisa = s.Load<ZivotnoOsiguranje>(dto.PolisaId),
-                    Klijent = s.Load<Klijent>(dto.KlijentId),
+                    Klijent = dto.KlijentId.HasValue ? s.Load<Klijent>(dto.KlijentId.Value) : null,
+                    ImePrezime = dto.ImePrezime,
                     ProcenatUdela = dto.ProcenatUdela
                 };
                 s.Save(k);

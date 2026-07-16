@@ -109,6 +109,47 @@
                             <div class="mb-2"><label class="form-label">Procena oštećenja</label><textarea class="form-control" id="procenaOstecenja" rows="2"></textarea></div>
                             <div class="mb-2"><label class="form-label">Izvođač sanacije</label><input class="form-control" id="izvodjacSanacije"></div>
                         </div>
+
+                        <!-- Ostecena lica -->
+                        <div class="border-top pt-2 mt-2">
+                            <label class="form-label mb-1">Oštećena lica</label>
+                            <table class="table table-sm mb-2"><tbody id="tbodyOstecenaLicaNovi"></tbody></table>
+                            <div class="row g-2">
+                                <div class="col-md-3"><select class="form-select form-select-sm" id="olKlijentId"><option value="">-- nije registrovan klijent --</option></select></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="olImePrezime" placeholder="ili slobodno ime i prezime"></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="olOpisPovrede" placeholder="Opis povrede/štete"></div>
+                                <div class="col-md-2"><input type="number" step="0.01" class="form-control form-control-sm" id="olIznosNaknade" placeholder="Iznos"></div>
+                                <div class="col-md-1"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajOstecenoLiceNovi">➕</button></div>
+                            </div>
+                        </div>
+
+                        <!-- Osteceni predmeti -->
+                        <div class="border-top pt-2 mt-2">
+                            <label class="form-label mb-1">Oštećeni predmeti</label>
+                            <table class="table table-sm mb-2"><tbody id="tbodyOsteceniPredmetiNovi"></tbody></table>
+                            <div class="row g-2">
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="opTipPredmeta" placeholder="Tip predmeta"></div>
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="opOpisOstecenja" placeholder="Opis oštećenja"></div>
+                                <div class="col-md-2"><input type="number" step="0.01" class="form-control form-control-sm" id="opProcenjeniIznos" placeholder="Iznos"></div>
+                                <div class="col-md-2"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajOsteceniPredmetNovi">➕</button></div>
+                            </div>
+                        </div>
+
+                        <!-- Procene stete (samo ADMIN/PROCENITELJ) -->
+                        <div class="border-top pt-2 mt-2 d-none" id="redProceneNovi">
+                            <label class="form-label mb-1">Procene štete</label>
+                            <table class="table table-sm mb-2"><tbody id="tbodyProceneNovi"></tbody></table>
+                            <div class="row g-2 mb-1">
+                                <div class="col-md-6"><select class="form-select form-select-sm" id="prProceniteljId"></select></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="prMetodProc" placeholder="Metod procene"></div>
+                                <div class="col-md-3"><input type="number" step="0.01" class="form-control form-control-sm" id="prProcenjeniIznos" placeholder="Iznos"></div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-7"><input class="form-control form-control-sm" id="prNalaz" placeholder="Nalaz"></div>
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="prPreporuka" placeholder="Preporuka"></div>
+                                <div class="col-md-1"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajProcenuNovi">➕</button></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
@@ -172,6 +213,50 @@
                             <div class="mb-2"><label class="form-label">Procena oštećenja</label><textarea class="form-control" id="ezProcenaOstecenja" rows="2"></textarea></div>
                             <div class="mb-2"><label class="form-label">Izvođač sanacije</label><input class="form-control" id="ezIzvodjacSanacije"></div>
                         </div>
+
+                        <!-- Ostecena lica -->
+                        <div class="border-top pt-2 mt-2">
+                            <label class="form-label mb-1">Oštećena lica</label>
+                            <div id="greskaOsteceni" class="greska-box d-none"></div>
+                            <table class="table table-sm mb-2"><tbody id="tbodyOstecenaLicaIzmena"></tbody></table>
+                            <div class="row g-2">
+                                <div class="col-md-3"><select class="form-select form-select-sm" id="ezOlKlijentId"><option value="">-- nije registrovan klijent --</option></select></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="ezOlImePrezime" placeholder="ili slobodno ime i prezime"></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="ezOlOpisPovrede" placeholder="Opis povrede/štete"></div>
+                                <div class="col-md-2"><input type="number" step="0.01" class="form-control form-control-sm" id="ezOlIznosNaknade" placeholder="Iznos"></div>
+                                <div class="col-md-1"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajOstecenoLiceIzmena">➕</button></div>
+                            </div>
+                        </div>
+
+                        <!-- Osteceni predmeti -->
+                        <div class="border-top pt-2 mt-2">
+                            <label class="form-label mb-1">Oštećeni predmeti</label>
+                            <div id="greskaPredmeti" class="greska-box d-none"></div>
+                            <table class="table table-sm mb-2"><tbody id="tbodyOsteceniPredmetiIzmena"></tbody></table>
+                            <div class="row g-2">
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="ezOpTipPredmeta" placeholder="Tip predmeta"></div>
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="ezOpOpisOstecenja" placeholder="Opis oštećenja"></div>
+                                <div class="col-md-2"><input type="number" step="0.01" class="form-control form-control-sm" id="ezOpProcenjeniIznos" placeholder="Iznos"></div>
+                                <div class="col-md-2"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajOsteceniPredmetIzmena">➕</button></div>
+                            </div>
+                        </div>
+
+                        <!-- Procene stete (samo ADMIN/PROCENITELJ) -->
+                        <div class="border-top pt-2 mt-2 d-none" id="ezRedProcene">
+                            <label class="form-label mb-1">Procene štete</label>
+                            <div id="greskaProcene" class="greska-box d-none"></div>
+                            <table class="table table-sm mb-2"><tbody id="tbodyProceneIzmena"></tbody></table>
+                            <div class="row g-2 mb-1">
+                                <div class="col-md-6"><select class="form-select form-select-sm" id="ezPrProceniteljId"></select></div>
+                                <div class="col-md-3"><input class="form-control form-control-sm" id="ezPrMetodProc" placeholder="Metod procene"></div>
+                                <div class="col-md-3"><input type="number" step="0.01" class="form-control form-control-sm" id="ezPrProcenjeniIznos" placeholder="Iznos"></div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-7"><input class="form-control form-control-sm" id="ezPrNalaz" placeholder="Nalaz"></div>
+                                <div class="col-md-4"><input class="form-control form-control-sm" id="ezPrPreporuka" placeholder="Preporuka"></div>
+                                <div class="col-md-1"><button type="button" class="btn btn-osig btn-sm w-100" id="btnDodajProcenuIzmena">➕</button></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
@@ -193,16 +278,9 @@
                 <button class="btn btn-osig-plava flex-fill" id="btnDetaljiIzmeni">✏️ Izmeni</button>
                 <button class="btn btn-osig-crvena flex-fill" id="btnDetaljiObrisi">🗑️ Obriši</button>
             </div>
-            <div class="d-flex gap-2 mb-2 flex-wrap">
+            <div class="d-flex gap-2 mb-3 pb-3 border-bottom flex-wrap">
                 <button class="btn btn-osig-narandzasta flex-fill" id="btnDetaljiFaze">📋 Faze obrade</button>
                 <button class="btn btn-osig-plava-tamna flex-fill" id="btnDetaljiFoto">📷 Fotografije</button>
-            </div>
-            <div class="d-flex gap-2 mb-2 flex-wrap">
-                <button class="btn btn-osig-siva flex-fill" id="btnDetaljiOsteceni">🧑‍🤝‍🧑 Oštećena lica</button>
-                <button class="btn btn-osig-siva flex-fill" id="btnDetaljiPredmeti">📦 Oštećeni predmeti</button>
-            </div>
-            <div class="d-flex gap-2 mb-3 pb-3 border-bottom flex-wrap">
-                <button class="btn btn-osig flex-fill" id="btnDetaljiProcene">🔍 Procene štete</button>
             </div>
             <div id="detaljiSadrzaj" class="flex-grow-1"><p class="text-muted">Učitavanje...</p></div>
         </div>
@@ -279,64 +357,6 @@
         </div>
     </div>
 
-    <!-- Modal: procene stete -->
-    <div class="modal fade" id="modalProcene" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="proceneNaslov">Procene štete</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div id="greskaProcene" class="greska-box d-none"></div>
-                    <div class="d-flex justify-content-end mb-2">
-                        <button type="button" class="btn btn-osig btn-sm" id="btnDodajProcenu">➕ Dodaj procenu</button>
-                    </div>
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Procenitelj</th>
-                                <th>Metod procene</th>
-                                <th>Nalaz</th>
-                                <th>Procenjeni iznos</th>
-                                <th>Preporuka</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyProcene"></tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: dodaj/izmeni procenu -->
-    <div class="modal fade" id="modalProcenaForma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="formaProcena">
-                    <div class="modal-header"><h5 class="modal-title" id="procenaFormaNaslov">Dodaj procenu</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body">
-                        <div id="greskaProcenaForma" class="greska-box d-none"></div>
-                        <input type="hidden" id="prId">
-                        <div class="mb-2"><label class="form-label">Procenitelj *</label><select class="form-select" id="prProceniteljId" required></select></div>
-                        <div class="mb-2"><label class="form-label">Metod procene</label><input class="form-control" id="prMetodProc" placeholder="npr. fizički pregled, veštačenje, procena na osnovu dokumentacije..."></div>
-                        <div class="mb-2"><label class="form-label">Nalaz</label><textarea class="form-control" id="prNalaz" rows="2"></textarea></div>
-                        <div class="mb-2"><label class="form-label">Procenjeni iznos</label><input type="number" step="0.01" class="form-control" id="prProcenjeniIznos"></div>
-                        <div class="mb-2"><label class="form-label">Preporuka</label><textarea class="form-control" id="prPreporuka" rows="2"></textarea></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
-                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal: fotografije stete (isto kao WinForms FotografijeSteteForma) -->
     <div class="modal fade" id="modalFotografije" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -348,7 +368,7 @@
                     <table class="table table-sm table-hover mb-3">
                         <thead>
                             <tr>
-                                <th>Putanja / naziv fajla</th>
+                                <th>Fotografija</th>
                                 <th>Opis</th>
                                 <th>Dodato</th>
                                 <th></th>
@@ -357,7 +377,7 @@
                         <tbody id="tbodyFoto"></tbody>
                     </table>
                     <form id="formaFoto" class="d-flex gap-2 align-items-end flex-wrap">
-                        <div class="flex-grow-1"><label class="form-label mb-1">Putanja / naziv fajla *</label><input class="form-control" id="ftPutanja" required></div>
+                        <div class="flex-grow-1"><label class="form-label mb-1">Fajl (JPG, PNG, WEBP) *</label><input type="file" class="form-control" id="ftFajl" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required></div>
                         <div class="flex-grow-1"><label class="form-label mb-1">Opis</label><input class="form-control" id="ftOpis"></div>
                         <button type="submit" class="btn btn-osig">➕ Dodaj</button>
                     </form>
@@ -365,116 +385,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: ostecena lica -->
-    <div class="modal fade" id="modalOsteceni" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="ostecenNaslov">Oštećena lica</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div id="greskaOsteceni" class="greska-box d-none"></div>
-                    <div class="d-flex justify-content-end mb-2">
-                        <button type="button" class="btn btn-osig btn-sm" id="btnDodajOsteceno">➕ Dodaj oštećeno lice</button>
-                    </div>
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Ime i prezime</th>
-                                <th>Opis povrede/štete</th>
-                                <th>Iznos naknade</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyOsteceni"></tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: dodaj/izmeni osteceno lice -->
-    <div class="modal fade" id="modalOstecenoForma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="formaOsteceno">
-                    <div class="modal-header"><h5 class="modal-title" id="ostecenoFormaNaslov">Dodaj oštećeno lice</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body">
-                        <div id="greskaOstecenoForma" class="greska-box d-none"></div>
-                        <input type="hidden" id="olId">
-                        <div class="mb-2">
-                            <label class="form-label">Registrovani klijent</label>
-                            <select class="form-select" id="olKlijentId"><option value="">-- nije registrovan klijent (unesi ime niže) --</option></select>
-                        </div>
-                        <div class="mb-2"><label class="form-label">Ime i prezime *</label><input class="form-control" id="olImePrezime" required></div>
-                        <div class="mb-2"><label class="form-label">Opis povrede/štete</label><textarea class="form-control" id="olOpisPovrede" rows="2"></textarea></div>
-                        <div class="mb-2"><label class="form-label">Iznos naknade</label><input type="number" step="0.01" class="form-control" id="olIznosNaknade"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
-                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: osteceni predmeti -->
-    <div class="modal fade" id="modalPredmeti" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title" id="predmetiNaslov">Oštećeni predmeti</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div id="greskaPredmeti" class="greska-box d-none"></div>
-                    <div class="d-flex justify-content-end mb-2">
-                        <button type="button" class="btn btn-osig btn-sm" id="btnDodajPredmet">➕ Dodaj oštećeni predmet</button>
-                    </div>
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Tip predmeta</th>
-                                <th>Opis oštećenja</th>
-                                <th>Procenjeni iznos</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbodyPredmeti"></tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zatvori</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal: dodaj/izmeni osteceni predmet -->
-    <div class="modal fade" id="modalPredmetForma" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="formaPredmet">
-                    <div class="modal-header"><h5 class="modal-title" id="predmetFormaNaslov">Dodaj oštećeni predmet</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                    <div class="modal-body">
-                        <div id="greskaPredmetForma" class="greska-box d-none"></div>
-                        <input type="hidden" id="opId">
-                        <div class="mb-2"><label class="form-label">Tip predmeta *</label><input class="form-control" id="opTipPredmeta" required placeholder="npr. vozilo, nameštaj, kućni aparat..."></div>
-                        <div class="mb-2"><label class="form-label">Opis oštećenja</label><textarea class="form-control" id="opOpisOstecenja" rows="2"></textarea></div>
-                        <div class="mb-2"><label class="form-label">Procenjeni iznos</label><input type="number" step="0.01" class="form-control" id="opProcenjeniIznos"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Otkaži</button>
-                        <button type="submit" class="btn btn-osig">Sačuvaj</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>

@@ -255,16 +255,19 @@ namespace OsiguranjApp
             catch (Exception) { throw; }
         }
 
-        public static void obrisiFotografiju(int id)
+        // Vraca putanju obrisane fotografije da bi pozivalac (kontroler) mogao da obrise i sam fajl sa diska.
+        public static string? obrisiFotografiju(int id)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
             {
                 ISession s = DataLayer.GetSession();
                 Fotografija f = s.Load<Fotografija>(id);
+                string? putanja = f.Putanja;
                 s.Delete(f);
                 s.Flush();
                 s.Close();
+                return putanja;
             }
             catch (Exception) { throw; }
         }

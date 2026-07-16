@@ -1,10 +1,12 @@
 using System;
+using System.IO;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -106,6 +108,34 @@ app.UseExceptionHandler(errApp =>
 });
 
 app.UseCors("KlijentDemo");
+
+// Fotografije uz stete se cuvaju na disku servera i vracaju kao staticki fajlovi (/uploads/...).
+// Folder "Uploads" (ne "wwwroot") - dotnet watch po defaultu prati samo *.cs/*.csproj/*.resx i
+// wwwroot/**/*.config/*.json (https://learn.microsoft.com/aspnet/core/tutorials/dotnet-watch),
+// pa slike ovde nikad ne okidaju lazni "izmena izvornog koda" restart/crash.
+string uploadsPath = Path.Combine(app.Environment.ContentRootPath, "Uploads");
+Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
+// Demo klijent (Client/*.html) servira i backend na /client, radi lakseg pokretanja
+// (nema potrebe za dupli-klik na fajl ili poseban Live Server). api.js i dalje gadja
+// isti origin (localhost:5000), pa ovo radi i bez CORS-a.
+string clientPath = Path.Combine(app.Environment.ContentRootPath, "Client");
+var clientFileProvider = new PhysicalFileProvider(clientPath);
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    FileProvider = clientFileProvider,
+    RequestPath = "/client"
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = clientFileProvider,
+    RequestPath = "/client"
+});
 
 app.UseAuthentication();
 

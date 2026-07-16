@@ -74,12 +74,75 @@ namespace OsiguranjApp
                     };
                     foreach (var ob in p.OblasiProc)
                         if (ob.Oblast != null) pb.Oblasti.Add(ob.Oblast);
+                    foreach (var pr in p.ProceneSteta.OrderByDescending(pr => pr.DatumProc))
+                        pb.Procene.Add(new ProcenaStetaBasic
+                        {
+                            ProcenaId = pr.ProcenaId, StetaId = pr.Steta?.StetaId ?? 0,
+                            StetaBrojStete = pr.Steta?.BrojStete,
+                            DatumProc = pr.DatumProc,
+                            ProceniteljId = p.OsobljeId, ProceniteljIme = $"{p.Ime} {p.Prezime}",
+                            MetodProc = pr.MetodProc, Nalaz = pr.Nalaz,
+                            ProcenjeniIznos = pr.ProcenjeniIznos, Preporuka = pr.Preporuka
+                        });
                     lista.Add(pb);
                 }
                 s.Close();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
             return lista;
+        }
+
+        // ---------- OblastProc (oblasti kojima se bavi konkretan Procenitelj) ----------
+
+        public static List<OblastProcBasic> vratiOblastiZaProcenitelja(int proceniteljId)
+        {
+            var lista = new List<OblastProcBasic>();
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                foreach (var o in s.Query<OblastProc>().Where(x => x.Procenitelj!.OsobljeId == proceniteljId))
+                    lista.Add(new OblastProcBasic
+                    {
+                        OblastId = o.OblastId, ProceniteljId = o.Procenitelj?.OsobljeId ?? 0,
+                        ProceniteljIme = o.Procenitelj != null ? $"{o.Procenitelj.Ime} {o.Procenitelj.Prezime}" : null,
+                        Oblast = o.Oblast
+                    });
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+            return lista;
+        }
+
+        public static void dodajOblastProc(OblastProcBasic dto)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                var o = new OblastProc
+                {
+                    Procenitelj = s.Load<Procenitelj>(dto.ProceniteljId),
+                    Oblast = dto.Oblast
+                };
+                s.Save(o);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void obrisiOblastProc(int id)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                OblastProc o = s.Load<OblastProc>(id);
+                s.Delete(o);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
         public static void dodajAgenta(AgentBasic dto)
@@ -143,7 +206,9 @@ namespace OsiguranjApp
             try
             {
                 ISession s = DataLayer.GetSession();
-                Osoblje  o = s.Load<Osoblje>(dto.OsobljeId);
+                // s.Get (ne s.Load) da bi "is Pravnik/Procenitelj/Lekar" ispod odmah videlo
+                // stvarni (runtime) podtip - s.Load vraca proxy tipizirano kao bazni Osoblje.
+                Osoblje  o = s.Get<Osoblje>(dto.OsobljeId);
                 o.Ime = dto.Ime; o.Prezime = dto.Prezime;
                 o.Adresa = dto.Adresa; o.Telefon = dto.Telefon;
                 o.Email = dto.Email; o.Status = dto.Status;
@@ -157,6 +222,47 @@ namespace OsiguranjApp
                     procenitelj.BrojLicence = dto.BrojLicence;
                 }
                 s.SaveOrUpdate(o);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void dodajLekara(LekarBasic dto)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                var l = new Lekar
+                {
+                    Ime = dto.Ime, Prezime = dto.Prezime, Jmbg = dto.Jmbg,
+                    Adresa = dto.Adresa, Telefon = dto.Telefon, Email = dto.Email,
+                    DatumAngazovanja = DateTime.Today,
+                    Status = dto.Status ?? "AKTIVAN",
+                    TipOsoblja = "LEKAR",
+                    Specijalizacija = dto.Specijalizacija,
+                    LicencaBroj = dto.LicencaBroj
+                };
+                s.Save(l);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void azurirajLekara(LekarBasic dto)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                Lekar l = s.Get<Lekar>(dto.OsobljeId);
+                l.Ime = dto.Ime; l.Prezime = dto.Prezime;
+                l.Adresa = dto.Adresa; l.Telefon = dto.Telefon;
+                l.Email = dto.Email; l.Status = dto.Status;
+                l.Specijalizacija = dto.Specijalizacija; l.LicencaBroj = dto.LicencaBroj;
+                s.SaveOrUpdate(l);
                 s.Flush();
                 s.Close();
             }
@@ -199,13 +305,37 @@ namespace OsiguranjApp
                     TipPravnika = pr.TipPravnika, BarBroj = pr.BarBroj
                 };
             if (o is Procenitelj pc)
-                return new ProceniteljBasic
+            {
+                var pb = new ProceniteljBasic
                 {
                     OsobljeId = pc.OsobljeId, Ime = pc.Ime, Prezime = pc.Prezime,
                     TipOsoblja = "PROCENITELJ", Status = pc.Status,
                     Adresa = pc.Adresa, Telefon = pc.Telefon, Email = pc.Email,
                     DatumAngazovanja = pc.DatumAngazovanja,
                     BrojLicence = pc.BrojLicence
+                };
+                foreach (var ob in pc.OblasiProc)
+                    if (ob.Oblast != null) pb.Oblasti.Add(ob.Oblast);
+                foreach (var procena in pc.ProceneSteta.OrderByDescending(x => x.DatumProc))
+                    pb.Procene.Add(new ProcenaStetaBasic
+                    {
+                        ProcenaId = procena.ProcenaId, StetaId = procena.Steta?.StetaId ?? 0,
+                        StetaBrojStete = procena.Steta?.BrojStete,
+                        DatumProc = procena.DatumProc,
+                        ProceniteljId = pc.OsobljeId, ProceniteljIme = $"{pc.Ime} {pc.Prezime}",
+                        MetodProc = procena.MetodProc, Nalaz = procena.Nalaz,
+                        ProcenjeniIznos = procena.ProcenjeniIznos, Preporuka = procena.Preporuka
+                    });
+                return pb;
+            }
+            if (o is Lekar l)
+                return new LekarBasic
+                {
+                    OsobljeId = l.OsobljeId, Ime = l.Ime, Prezime = l.Prezime,
+                    TipOsoblja = "LEKAR", Status = l.Status,
+                    Adresa = l.Adresa, Telefon = l.Telefon, Email = l.Email,
+                    DatumAngazovanja = l.DatumAngazovanja,
+                    Specijalizacija = l.Specijalizacija, LicencaBroj = l.LicencaBroj
                 };
             return new OsobljePregled
             {

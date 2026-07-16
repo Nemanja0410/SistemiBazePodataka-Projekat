@@ -7,48 +7,23 @@ using OsiguranjApp.DTOs;
 
 namespace OsiguranjApp.Forme
 {
-    public class IzvestajiForma : Form
+    public partial class IzvestajiForma : Form
     {
-        private TabControl tabControl = null!;
-
         public IzvestajiForma()
         {
             InitializeComponent();
             UcitajSveTabove();
         }
 
-        private void InitializeComponent()
-        {
-            this.Text      = "Izveštaji i statistike";
-            this.Size      = new Size(1050, 680);
-            this.BackColor = UiHelper.PozadinaForm;
-            this.Font      = new Font("Segoe UI", 9f);
-
-            var naslov = UiHelper.NapraviNaslov("📊  Izveštaji i statistike");
-
-            tabControl = new TabControl
-            {
-                Dock    = DockStyle.Fill,
-                Font    = new Font("Segoe UI", 9.5f),
-                Padding = new System.Drawing.Point(12, 6)
-            };
-
-            tabControl.TabPages.Add(KreirajTabPolise());
-            tabControl.TabPages.Add(KreirajTabStete());
-            tabControl.TabPages.Add(KreirajTabAgenti());
-
-            this.Controls.Add(tabControl);
-            this.Controls.Add(naslov);
-        }
-
         private TabPage KreirajTabPolise()
         {
             var tp  = new TabPage("  📋  Polise po tipu  ");
             var dgv = NapraviGrid();
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tip osiguranja",       FillWeight = 35 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj polisa",          FillWeight = 20 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupna premija (RSD)", FillWeight = 30 });
-            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prosečna premija",     FillWeight = 25 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tip osiguranja",    FillWeight = 30 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Valuta",            FillWeight = 15 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj polisa",       FillWeight = 20 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupna premija",    FillWeight = 25 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prosečna premija",  FillWeight = 25 });
             dgv.Name = "dgvPolise";
 
             var pnlBtn = new Panel { Dock = DockStyle.Bottom, Height = 44, BackColor = Color.White, Padding = new Padding(8, 8, 8, 0) };
@@ -71,26 +46,40 @@ namespace OsiguranjApp.Forme
             {
                 Dock              = DockStyle.Fill,
                 Orientation       = Orientation.Horizontal,
-                SplitterDistance  = 200,
+                SplitterDistance  = 220,
                 BorderStyle       = BorderStyle.None
             };
 
+            var lblVrsta = new Label { Text = "Po vrsti štete:", Dock = DockStyle.Top, Height = 22, Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = UiHelper.Plava, Padding = new Padding(4, 2, 0, 0) };
             var dgvVrsta = NapraviGrid();
-            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Vrsta štete",   FillWeight = 30 });
-            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj",          FillWeight = 20 });
-            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupno (RSD)",  FillWeight = 30 });
+            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Vrsta štete", FillWeight = 30 });
+            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Valuta",      FillWeight = 15 });
+            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj",        FillWeight = 20 });
+            dgvVrsta.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupno",      FillWeight = 25 });
             dgvVrsta.Name = "dgvVrsta";
+            var btnExportVrsta = UiHelper.NapraviDugme("💾 CSV", UiHelper.PlavaSvetla, 80);
+            btnExportVrsta.Click += (s, e) => ExportujGrid(dgvVrsta, "stete_po_vrsti");
+            var pnlVrstaBtn = new Panel { Dock = DockStyle.Bottom, Height = 34, BackColor = Color.White };
+            pnlVrstaBtn.Controls.Add(btnExportVrsta);
             split.Panel1.Controls.Add(dgvVrsta);
+            split.Panel1.Controls.Add(pnlVrstaBtn);
+            split.Panel1.Controls.Add(lblVrsta);
             split.Panel1.Padding = new Padding(8, 8, 8, 4);
 
             var lblStat  = new Label { Text = "Po statusu:", Dock = DockStyle.Top, Height = 22, Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = UiHelper.Plava, Padding = new Padding(4, 2, 0, 0) };
             var dgvStatus = NapraviGrid();
-            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status",         FillWeight = 30 });
-            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj šteta",     FillWeight = 20 });
-            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupno (RSD)",   FillWeight = 30 });
-            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prosek (RSD)",   FillWeight = 25 });
+            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status",     FillWeight = 25 });
+            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Valuta",     FillWeight = 15 });
+            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj šteta", FillWeight = 20 });
+            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ukupno",     FillWeight = 20 });
+            dgvStatus.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Prosek",     FillWeight = 20 });
             dgvStatus.Name = "dgvStatus";
+            var btnExportStatus = UiHelper.NapraviDugme("💾 CSV", UiHelper.PlavaSvetla, 80);
+            btnExportStatus.Click += (s, e) => ExportujGrid(dgvStatus, "stete_statistika");
+            var pnlStatusBtn = new Panel { Dock = DockStyle.Bottom, Height = 34, BackColor = Color.White };
+            pnlStatusBtn.Controls.Add(btnExportStatus);
             split.Panel2.Controls.Add(dgvStatus);
+            split.Panel2.Controls.Add(pnlStatusBtn);
             split.Panel2.Controls.Add(lblStat);
             split.Panel2.Padding = new Padding(8, 4, 8, 8);
 
@@ -122,13 +111,96 @@ namespace OsiguranjApp.Forme
             return tp;
         }
 
+        private TabPage KreirajTabIsticu()
+        {
+            var tp  = new TabPage("  ⏰  Polise koje ističu  ");
+            var dgv = NapraviGrid();
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj polise",  FillWeight = 25 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tip",          FillWeight = 20 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ugovarač",     FillWeight = 25 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Datum isteka", FillWeight = 15 });
+            dgv.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Preostalo",    FillWeight = 15 });
+            dgv.Name = "dgvIsticu";
+
+            var lbl = new Label
+            {
+                Text = "Aktivne polise koje ističu u narednih 30 dana, sortirano po hitnosti.",
+                Dock = DockStyle.Top, Height = 24, ForeColor = UiHelper.Siva, Padding = new Padding(8, 4, 0, 0)
+            };
+
+            var pnlBtn = new Panel { Dock = DockStyle.Bottom, Height = 44, BackColor = Color.White, Padding = new Padding(8, 8, 8, 0) };
+            var btnExport = UiHelper.NapraviDugme("💾  Izvezi CSV", UiHelper.PlavaSvetla, 130);
+            btnExport.Location = new Point(8, 8);
+            btnExport.Click += (s, e) => ExportujGrid(dgv, "polise_isticu");
+            pnlBtn.Controls.Add(btnExport);
+
+            var pnlG = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+            pnlG.Controls.Add(dgv);
+            tp.Controls.Add(pnlG);
+            tp.Controls.Add(lbl);
+            tp.Controls.Add(pnlBtn);
+            return tp;
+        }
+
+        private TabPage KreirajTabSirovi()
+        {
+            var tp = new TabPage("  💾  Polise i klijenti  ");
+            var split = new SplitContainer
+            {
+                Dock             = DockStyle.Fill,
+                Orientation      = Orientation.Vertical,
+                SplitterDistance = 500,
+                BorderStyle      = BorderStyle.None
+            };
+
+            var lblP = new Label { Text = "Sve polise:", Dock = DockStyle.Top, Height = 22, Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = UiHelper.Plava, Padding = new Padding(4, 2, 0, 0) };
+            var dgvP = NapraviGrid();
+            dgvP.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Broj polise", FillWeight = 25 });
+            dgvP.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tip",         FillWeight = 20 });
+            dgvP.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Ugovarač",    FillWeight = 25 });
+            dgvP.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Premija",     FillWeight = 15 });
+            dgvP.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status",      FillWeight = 15 });
+            dgvP.Name = "dgvSveP";
+            var btnExportP = UiHelper.NapraviDugme("💾 Izvezi CSV", UiHelper.PlavaSvetla, 110);
+            btnExportP.Click += (s, e) => ExportujGrid(dgvP, "polise");
+            var pnlPBtn = new Panel { Dock = DockStyle.Bottom, Height = 34, BackColor = Color.White };
+            pnlPBtn.Controls.Add(btnExportP);
+            split.Panel1.Controls.Add(dgvP);
+            split.Panel1.Controls.Add(pnlPBtn);
+            split.Panel1.Controls.Add(lblP);
+            split.Panel1.Padding = new Padding(8);
+
+            var lblK = new Label { Text = "Svi klijenti:", Dock = DockStyle.Top, Height = 22, Font = new Font("Segoe UI", 9f, FontStyle.Bold), ForeColor = UiHelper.Plava, Padding = new Padding(4, 2, 0, 0) };
+            var dgvK = NapraviGrid();
+            dgvK.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Naziv",   FillWeight = 30 });
+            dgvK.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Tip",     FillWeight = 25 });
+            dgvK.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Telefon", FillWeight = 20 });
+            dgvK.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = "Status",  FillWeight = 15 });
+            dgvK.Name = "dgvSviK";
+            var btnExportK = UiHelper.NapraviDugme("💾 Izvezi CSV", UiHelper.PlavaSvetla, 110);
+            btnExportK.Click += (s, e) => ExportujGrid(dgvK, "klijenti");
+            var pnlKBtn = new Panel { Dock = DockStyle.Bottom, Height = 34, BackColor = Color.White };
+            pnlKBtn.Controls.Add(btnExportK);
+            split.Panel2.Controls.Add(dgvK);
+            split.Panel2.Controls.Add(pnlKBtn);
+            split.Panel2.Controls.Add(lblK);
+            split.Panel2.Padding = new Padding(8);
+
+            tp.Controls.Add(split);
+            return tp;
+        }
+
         private void UcitajSveTabove()
         {
             UcitajPolise();
             UcitajStete();
             UcitajAgente();
+            UcitajIsticu();
+            UcitajSirove();
         }
 
+        // Iznosi u razlicitim valutama se ne smeju sabirati kao da su isti broj (RSD+EUR+USD
+        // nema smisla), zato se svugde grupise po (kategorija, valuta).
         private void UcitajPolise()
         {
             try
@@ -139,29 +211,30 @@ namespace OsiguranjApp.Forme
 
                 var lista = DTOManager.vratiSvePolise();
                 var grupe = lista
-                    .GroupBy(p => p.TipOsiguranja)
+                    .GroupBy(p => new { p.TipOsiguranja, Valuta = p.Valuta ?? "RSD" })
                     .Select(g => new
                     {
-                        Tip    = g.Key,
-                        Broj   = g.Count(),
-                        Ukupno = g.Sum(p => p.OsnovnaPremija)
+                        g.Key.TipOsiguranja, g.Key.Valuta,
+                        Broj    = g.Count(),
+                        Ukupno  = g.Sum(p => p.OsnovnaPremija)
                     })
-                    .OrderByDescending(x => x.Ukupno)
+                    .OrderBy(x => x.TipOsiguranja).ThenBy(x => x.Valuta)
                     .ToList();
 
-                decimal svukupno = 0;
-                int svBroj = 0;
                 foreach (var gr in grupe)
                 {
                     decimal prosek = gr.Broj > 0 ? gr.Ukupno / gr.Broj : 0;
-                    dgv.Rows.Add(gr.Tip, gr.Broj, $"{gr.Ukupno:N2}", $"{prosek:N2}");
-                    svukupno += gr.Ukupno;
-                    svBroj   += gr.Broj;
+                    dgv.Rows.Add(gr.TipOsiguranja, gr.Valuta, gr.Broj, $"{gr.Ukupno:N2}", $"{prosek:N2}");
                 }
 
-                int totRed = dgv.Rows.Add("UKUPNO", svBroj, $"{svukupno:N2}", "");
-                dgv.Rows[totRed].DefaultCellStyle.Font      = new Font("Segoe UI", 9f, FontStyle.Bold);
-                dgv.Rows[totRed].DefaultCellStyle.BackColor = Color.FromArgb(230, 240, 255);
+                foreach (var poValuti in grupe.GroupBy(g => g.Valuta))
+                {
+                    int svBroj = poValuti.Sum(g => g.Broj);
+                    decimal svUkupno = poValuti.Sum(g => g.Ukupno);
+                    int r = dgv.Rows.Add($"UKUPNO ({poValuti.Key})", "", svBroj, $"{svUkupno:N2}", "");
+                    dgv.Rows[r].DefaultCellStyle.Font      = new Font("Segoe UI", 9f, FontStyle.Bold);
+                    dgv.Rows[r].DefaultCellStyle.BackColor = Color.FromArgb(230, 240, 255);
+                }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }
@@ -176,17 +249,17 @@ namespace OsiguranjApp.Forme
                 {
                     dgvVrsta.Rows.Clear();
                     var grupe = stete
-                        .GroupBy(s => s.VrstaStete)
+                        .GroupBy(s => new { s.VrstaStete, Valuta = s.Valuta ?? "RSD" })
                         .Select(g => new
                         {
-                            Vrsta  = g.Key,
+                            g.Key.VrstaStete, g.Key.Valuta,
                             Broj   = g.Count(),
                             Ukupno = g.Where(s => s.ProcenjeniIznos.HasValue)
                                       .Sum(s => s.ProcenjeniIznos ?? 0)
                         })
-                        .OrderByDescending(x => x.Ukupno);
+                        .OrderBy(x => x.VrstaStete).ThenBy(x => x.Valuta);
                     foreach (var gr in grupe)
-                        dgvVrsta.Rows.Add(gr.Vrsta, gr.Broj, $"{gr.Ukupno:N2}");
+                        dgvVrsta.Rows.Add(gr.VrstaStete, gr.Valuta, gr.Broj, $"{gr.Ukupno:N2}");
                 }
 
                 var dgvStatus = NadjiGrid("dgvStatus");
@@ -194,10 +267,10 @@ namespace OsiguranjApp.Forme
                 {
                     dgvStatus.Rows.Clear();
                     var grupe = stete
-                        .GroupBy(s => s.Status)
+                        .GroupBy(s => new { s.Status, Valuta = s.Valuta ?? "RSD" })
                         .Select(g => new
                         {
-                            Status = g.Key,
+                            g.Key.Status, g.Key.Valuta,
                             Broj   = g.Count(),
                             Ukupno = g.Where(s => s.ProcenjeniIznos.HasValue)
                                       .Sum(s => s.ProcenjeniIznos ?? 0),
@@ -208,7 +281,7 @@ namespace OsiguranjApp.Forme
                         .OrderByDescending(x => x.Broj);
                     foreach (var gr in grupe)
                     {
-                        int r = dgvStatus.Rows.Add(gr.Status, gr.Broj, $"{gr.Ukupno:N2}", $"{gr.Prosek:N2}");
+                        int r = dgvStatus.Rows.Add(gr.Status, gr.Valuta, gr.Broj, $"{gr.Ukupno:N2}", $"{gr.Prosek:N2}");
                         dgvStatus.Rows[r].Cells[0].Style.ForeColor = UiHelper.StatusBoja(gr.Status);
                         dgvStatus.Rows[r].Cells[0].Style.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
                     }
@@ -232,6 +305,53 @@ namespace OsiguranjApp.Forme
                         a.RegionRada ?? "/",
                         a.Polise.Count,
                         $"{a.ProvizijaProcenat:F2}%");
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        private void UcitajIsticu()
+        {
+            try
+            {
+                var dgv = NadjiGrid("dgvIsticu");
+                if (dgv == null) return;
+                dgv.Rows.Clear();
+
+                var danas = DateTime.Today;
+                var za30dana = danas.AddDays(30);
+                var isticu = DTOManager.vratiSvePolise()
+                    .Where(p => p.Status == "AKTIVNA" && p.DatumIsteka.Date >= danas && p.DatumIsteka.Date <= za30dana)
+                    .OrderBy(p => p.DatumIsteka)
+                    .ToList();
+
+                foreach (var p in isticu)
+                {
+                    int dana = (p.DatumIsteka.Date - danas).Days;
+                    dgv.Rows.Add(p.BrojPolise, p.TipOsiguranja, p.UgovaracNaziv, p.DatumIsteka.ToString("dd.MM.yyyy"), $"{dana} dana");
+                }
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message); }
+        }
+
+        private void UcitajSirove()
+        {
+            try
+            {
+                var dgvP = NadjiGrid("dgvSveP");
+                if (dgvP != null)
+                {
+                    dgvP.Rows.Clear();
+                    foreach (var p in DTOManager.vratiSvePolise())
+                        dgvP.Rows.Add(p.BrojPolise, p.TipOsiguranja, p.UgovaracNaziv, $"{p.OsnovnaPremija:N2} {p.Valuta}", p.Status);
+                }
+
+                var dgvK = NadjiGrid("dgvSviK");
+                if (dgvK != null)
+                {
+                    dgvK.Rows.Clear();
+                    foreach (var k in DTOManager.vratiSveKlijente())
+                        dgvK.Rows.Add(k.Naziv, k.TipKlijenta?.Replace("_", " "), k.Telefon, k.Status);
+                }
             }
             catch (Exception ex) { MessageBox.Show(ex.Message); }
         }

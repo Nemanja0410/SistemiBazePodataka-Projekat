@@ -152,6 +152,7 @@ namespace OsiguranjApp.Forme
                 rtbDetalji.AppendText($"PIB:            {pl.Pib}\n");
                 rtbDetalji.AppendText($"Matični broj:   {pl.MaticniBroj}\n");
                 rtbDetalji.AppendText($"Delatnost:      {pl.Delatnost}\n");
+                PrikaziKontaktOsobe(k.KlijentId);
             }
             else if (k is JavnaInstitucijaPregled ji)
             {
@@ -160,7 +161,23 @@ namespace OsiguranjApp.Forme
                 rtbDetalji.AppendText($"Matični broj:   {ji.MaticniBroj}\n");
                 rtbDetalji.AppendText($"Delatnost:      {ji.Delatnost}\n");
                 rtbDetalji.AppendText($"Nivo:           {ji.NivoInstitucije}\n");
+                PrikaziKontaktOsobe(k.KlijentId);
             }
+        }
+
+        // Kontakt osobe su prikazane kao obicni podatak (bez posebnog dugmeta/modala) - dodaju
+        // se kroz "Izmeni" formu, isto nacelo kao na web klijentu.
+        private void PrikaziKontaktOsobe(int klijentId)
+        {
+            var kontakti = DTOManager.vratiKontakteZaKlijenta(klijentId);
+            rtbDetalji.AppendText("\n── Kontakt osobe ──────────────────────\n");
+            if (kontakti.Count == 0)
+            {
+                rtbDetalji.AppendText("(nema unetih kontakt osoba)\n");
+                return;
+            }
+            foreach (var ko in kontakti)
+                rtbDetalji.AppendText($"• {ko.Ime} {ko.Prezime} — {ko.Funkcija}, {ko.Telefon}, {ko.Email}\n");
         }
     }
 }

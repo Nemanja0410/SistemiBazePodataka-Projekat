@@ -27,8 +27,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost]
         public IActionResult Dodaj([FromBody] StetaBasic dto)
         {
-            DTOManager.dodajStetu(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajStetu(dto);
+            return StatusCode(201, new { stetaId = id });
         }
 
         // PUT api/stete/5  (samo zajednicka polja)
@@ -80,8 +80,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("auto")]
         public IActionResult DodajAuto([FromBody] AutoStetaPregled dto)
         {
-            DTOManager.dodajAutoStetu(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajAutoStetu(dto);
+            return StatusCode(201, new { stetaId = id });
         }
 
         [HttpPut("auto/{id:int}")]
@@ -100,8 +100,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("zdravstvena")]
         public IActionResult DodajZdravstvenu([FromBody] ZdravstvenaStetaPregled dto)
         {
-            DTOManager.dodajZdravstvenuStetu(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajZdravstvenuStetu(dto);
+            return StatusCode(201, new { stetaId = id });
         }
 
         [HttpPut("zdravstvena/{id:int}")]
@@ -120,8 +120,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("imovinska")]
         public IActionResult DodajImovinsku([FromBody] ImovinskStetaPregled dto)
         {
-            DTOManager.dodajImovinskuStetu(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajImovinskuStetu(dto);
+            return StatusCode(201, new { stetaId = id });
         }
 
         [HttpPut("imovinska/{id:int}")]

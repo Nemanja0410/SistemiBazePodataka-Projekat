@@ -42,7 +42,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajAutoStetu(AutoStetaPregled dto)
+        public static int dodajAutoStetu(AutoStetaPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -59,6 +59,7 @@ namespace OsiguranjApp
                 s.Save(a);
                 s.Flush();
                 s.Close();
+                return a.StetaId;
             }
             catch (Exception) { throw; }
         }
@@ -112,7 +113,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajZdravstvenuStetu(ZdravstvenaStetaPregled dto)
+        public static int dodajZdravstvenuStetu(ZdravstvenaStetaPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT", "LEKAR");
             try
@@ -130,6 +131,7 @@ namespace OsiguranjApp
                 s.Save(z);
                 s.Flush();
                 s.Close();
+                return z.StetaId;
             }
             catch (Exception) { throw; }
         }
@@ -183,7 +185,7 @@ namespace OsiguranjApp
             return lista;
         }
 
-        public static void dodajImovinskuStetu(ImovinskStetaPregled dto)
+        public static int dodajImovinskuStetu(ImovinskStetaPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -199,6 +201,7 @@ namespace OsiguranjApp
                 s.Save(i);
                 s.Flush();
                 s.Close();
+                return i.StetaId;
             }
             catch (Exception) { throw; }
         }

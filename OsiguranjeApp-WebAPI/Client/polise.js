@@ -15,9 +15,10 @@ let sviUsevi = [];
 let sveZivotinje = [];
 const offDetalji = new bootstrap.Offcanvas(document.getElementById("offDetalji"));
 const modalIzmeni = new bootstrap.Modal(document.getElementById("modalIzmeni"));
-const modalKorisnici = new bootstrap.Modal(document.getElementById("modalKorisnici"));
-const modalPokrica = new bootstrap.Modal(document.getElementById("modalPokrica"));
 const modalIstorija = new bootstrap.Modal(document.getElementById("modalIstorija"));
+let pendingOsiguranici = [];
+let pendingPokrica = [];
+let pendingKorisnici = [];
 
 if (!smeUpis) {
     document.getElementById("btnDodaj").style.display = "none";
@@ -276,13 +277,30 @@ async function otvoriDetalje(p) {
                 html += `<li>${dp.naziv} — +${(dp.dodatnaPremija ?? 0).toFixed(2)} RSD</li>`;
             html += `</ul>`;
         }
+
+        if (p.tipOsiguranja !== "PUTNO") {
+            const uloge = await apiFetch(`/ulogeklijenata/polisa/${p.polisaId}`);
+            if (uloge.length > 0) {
+                html += `<h6 class="text-muted mt-3">Osiguranici (${uloge.length})</h6><ul class="mb-0">`;
+                for (const u of uloge) html += `<li>${u.klijentNaziv ?? u.imePrezime ?? ""}</li>`;
+                html += `</ul>`;
+            }
+        }
+
+        if (p.tipOsiguranja === "ZIVOTNO") {
+            const korisnici = await apiFetch(`/korisniciisplate/polisa/${p.polisaId}`);
+            if (korisnici.length > 0) {
+                html += `<h6 class="text-muted mt-3">Korisnici isplate (${korisnici.length})</h6><ul class="mb-0">`;
+                for (const k of korisnici) html += `<li>${k.klijentNaziv ?? k.imePrezime ?? ""} — ${k.procenatUdela?.toFixed(2)}%</li>`;
+                html += `</ul>`;
+            }
+        }
+
         sadrzaj.innerHTML = html;
     } catch (err) {
         sadrzaj.innerHTML = `<div class="greska-box">${err.message}</div>`;
     }
 
-    // Korisnici isplate postoje samo kod zivotnog osiguranja.
-    document.getElementById("redKorisnici").classList.toggle("d-none", p.tipOsiguranja !== "ZIVOTNO");
 }
 
 document.getElementById("btnDetaljiObrisi").addEventListener("click", async () => {
@@ -302,47 +320,64 @@ document.getElementById("btnDetaljiIzmeni").addEventListener("click", () => {
     otvoriIzmeni(punaOdabrana);
 });
 
-// ---------- Korisnici isplate (samo kod zivotnog osiguranja) ----------
+// ---------- Korisnici isplate (samo kod zivotnog osiguranja; ugradjeno direktno u
+// Dodaj i Izmeni forme, isti obrazac kao Osiguranici/Dodatna pokrica) ----------
 
-document.getElementById("btnDetaljiKorisnici").addEventListener("click", () => {
-    if (!odabrana) return;
-    otvoriKorisnici(odabrana);
-});
-
-async function otvoriKorisnici(p) {
-    document.getElementById("greskaKorisnici").classList.add("d-none");
-    document.getElementById("korisniciNaslov").textContent = `Korisnici isplate — ${p.brojPolise ?? ""}`;
-    document.getElementById("formaKorisnik").reset();
-    modalKorisnici.show();
-    await ucitajKorisnike(p.polisaId);
+function prikaziKorisniciNovi() {
+    const tbody = document.getElementById("tbodyKorisniciNovi");
+    tbody.innerHTML = "";
+    pendingKorisnici.forEach((k, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${k.naziv} — ${k.procenatUdela}%</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingKorisnici.splice(i, 1); prikaziKorisniciNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
 }
 
-async function ucitajKorisnike(polisaId) {
+document.getElementById("btnDodajKorisnikaNovi").addEventListener("click", () => {
+    const g = document.getElementById("greskaPolisa");
+    const klijentId = document.getElementById("kiKlijentId").value;
+    const imePrezime = document.getElementById("kiImePrezime").value.trim();
+    const procenat = parseFloat(document.getElementById("kiProcenat").value);
+    if (!klijentId && !imePrezime) { prikaziGresku(g, new Error("Izaberite registrovanog klijenta ili unesite ime i prezime.")); return; }
+    if (!procenat || procenat <= 0 || procenat > 100) { prikaziGresku(g, new Error("Procenat udela mora biti između 0.01 i 100.")); return; }
+
+    const naziv = klijentId ? sveKlijenti.find(k => k.klijentId === parseInt(klijentId))?.naziv : imePrezime;
+    pendingKorisnici.push({ klijentId: klijentId ? parseInt(klijentId) : null, imePrezime, procenatUdela: procenat, naziv });
+    document.getElementById("kiKlijentId").value = "";
+    document.getElementById("kiImePrezime").value = "";
+    document.getElementById("kiProcenat").value = "";
+    prikaziKorisniciNovi();
+});
+
+async function ucitajKorisniciIzmena(polisaId) {
     const g = document.getElementById("greskaKorisnici");
+    g.classList.add("d-none");
     try {
         const lista = await apiFetch(`/korisniciisplate/polisa/${polisaId}`);
-        prikaziKorisnike(lista);
+        prikaziKorisniciIzmena(lista);
     } catch (err) {
         prikaziGresku(g, err);
     }
 }
 
-function prikaziKorisnike(lista) {
-    const tbody = document.getElementById("tbodyKorisnici");
+function prikaziKorisniciIzmena(lista) {
+    const tbody = document.getElementById("tbodyKorisniciIzmena");
     tbody.innerHTML = "";
     for (const k of lista) {
+        const naziv = k.klijentNaziv ?? k.imePrezime ?? "";
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${k.klijentNaziv ?? ""}</td>
-            <td>${k.procenatUdela?.toFixed(2)}%</td>
-            <td class="text-end"></td>
-        `;
+        tr.innerHTML = `<td style="font-size:.85rem;">${naziv} — ${k.procenatUdela?.toFixed(2)}%</td><td class="text-end" style="width:70px;"></td>`;
         const btnObrisi = document.createElement("button");
         btnObrisi.className = "btn btn-sm btn-osig-crvena";
-        btnObrisi.textContent = "Obriši";
+        btnObrisi.textContent = "Ukloni";
         btnObrisi.onclick = async () => {
-            if (!confirm(`Obrisati korisnika isplate "${k.klijentNaziv}"?`)) return;
-            try { await apiFetch(`/korisniciisplate/${k.korisnikId}`, { method: "DELETE" }); await ucitajKorisnike(odabrana.polisaId); }
+            if (!confirm(`Obrisati korisnika isplate "${naziv}"?`)) return;
+            try { await apiFetch(`/korisniciisplate/${k.korisnikId}`, { method: "DELETE" }); await ucitajKorisniciIzmena(punaOdabrana.polisaId); }
             catch (err) { prikaziGresku(document.getElementById("greskaKorisnici"), err); }
         };
         tr.lastElementChild.appendChild(btnObrisi);
@@ -350,72 +385,107 @@ function prikaziKorisnike(lista) {
     }
 }
 
-document.getElementById("formaKorisnik").addEventListener("submit", async (e) => {
-    e.preventDefault();
+document.getElementById("btnDodajKorisnikaIzmena").addEventListener("click", async () => {
     const g = document.getElementById("greskaKorisnici");
     g.classList.add("d-none");
-
-    const dto = {
-        polisaId: odabrana.polisaId,
-        klijentId: parseInt(document.getElementById("kiKlijentId").value),
-        procenatUdela: parseFloat(document.getElementById("kiProcenat").value)
-    };
+    const klijentId = document.getElementById("ezKiKlijentId").value;
+    const imePrezime = document.getElementById("ezKiImePrezime").value.trim();
+    const procenat = parseFloat(document.getElementById("ezKiProcenat").value);
+    if (!klijentId && !imePrezime) { prikaziGresku(g, new Error("Izaberite registrovanog klijenta ili unesite ime i prezime.")); return; }
+    if (!procenat || procenat <= 0 || procenat > 100) { prikaziGresku(g, new Error("Procenat udela mora biti između 0.01 i 100.")); return; }
 
     try {
-        await apiFetch("/korisniciisplate", { method: "POST", body: JSON.stringify(dto) });
-        e.target.reset();
-        await ucitajKorisnike(odabrana.polisaId);
+        await apiFetch("/korisniciisplate", {
+            method: "POST",
+            body: JSON.stringify({ polisaId: punaOdabrana.polisaId, klijentId: klijentId ? parseInt(klijentId) : null, imePrezime, procenatUdela: procenat })
+        });
+        document.getElementById("ezKiKlijentId").value = "";
+        document.getElementById("ezKiImePrezime").value = "";
+        document.getElementById("ezKiProcenat").value = "";
+        await ucitajKorisniciIzmena(punaOdabrana.polisaId);
     } catch (err) {
         prikaziGresku(g, err);
     }
 });
 
-// ---------- Dodatna pokrica (dostupno za svaku polisu) ----------
+// ---------- Dodatna pokrica (ugradjeno direktno u Dodaj i Izmeni forme, isti obrazac kao
+// Osiguranici: Dodaj drzi listu privremeno dok polisa ne dobije ID, Izmeni salje odmah) ----------
 
-document.getElementById("btnDetaljiPokrica").addEventListener("click", () => {
-    if (!odabrana) return;
-    otvoriPokrica(odabrana);
-});
-
-async function otvoriPokrica(p) {
-    document.getElementById("greskaPokrica").classList.add("d-none");
-    document.getElementById("pokricaNaslov").textContent = `Dodatna pokrića — ${p.brojPolise ?? ""}`;
-    document.getElementById("formaPokrice").reset();
-    document.getElementById("pkFransiza").value = "0";
-    document.getElementById("pkPremija").value = "0";
-    modalPokrica.show();
-    await ucitajPokrica(p.polisaId);
+function citajPokriceInpute(prefiks, g) {
+    const id = (ime) => document.getElementById(prefiks + ime);
+    const naziv = id("Naziv").value.trim();
+    if (!naziv) { prikaziGresku(g, new Error("Naziv pokrića je obavezan.")); return null; }
+    const fransiza = parseFloat(id("Fransiza").value) || 0;
+    if (fransiza < 0 || fransiza > 100) { prikaziGresku(g, new Error("Franšiza je procenat, mora biti između 0 i 100.")); return null; }
+    const limitRaw = id("Limit").value;
+    const rez = {
+        naziv, opis: id("Opis").value.trim(),
+        limitPokrića: limitRaw ? parseFloat(limitRaw) : null,
+        fransiza, dodatnaPremija: parseFloat(id("Premija").value) || 0
+    };
+    id("Naziv").value = ""; id("Opis").value = ""; id("Limit").value = ""; id("Fransiza").value = "0"; id("Premija").value = "0";
+    return rez;
 }
 
-async function ucitajPokrica(polisaId) {
+function prikaziPokricaNovi() {
+    const tbody = document.getElementById("tbodyPokricaNovi");
+    tbody.innerHTML = "";
+    pendingPokrica.forEach((dp, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td style="font-size:.85rem;">${dp.naziv}</td>
+            <td style="font-size:.85rem;">${dp.opis ?? ""}</td>
+            <td style="font-size:.85rem;">${dp.limitPokrića ?? "/"}</td>
+            <td style="font-size:.85rem;">${dp.fransiza}%</td>
+            <td style="font-size:.85rem;">${dp.dodatnaPremija}</td>
+            <td class="text-end" style="width:70px;"></td>
+        `;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingPokrica.splice(i, 1); prikaziPokricaNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById("btnDodajPokriceNovi").addEventListener("click", () => {
+    const dp = citajPokriceInpute("pk", document.getElementById("greskaPolisa"));
+    if (dp === null) return;
+    pendingPokrica.push(dp);
+    prikaziPokricaNovi();
+});
+
+async function ucitajPokricaIzmena(polisaId) {
     const g = document.getElementById("greskaPokrica");
+    g.classList.add("d-none");
     try {
         const lista = await apiFetch(`/dodatnapokrica/polisa/${polisaId}`);
-        prikaziPokrica(lista);
+        prikaziPokricaIzmena(lista);
     } catch (err) {
         prikaziGresku(g, err);
     }
 }
 
-function prikaziPokrica(lista) {
-    const tbody = document.getElementById("tbodyPokrica");
+function prikaziPokricaIzmena(lista) {
+    const tbody = document.getElementById("tbodyPokricaIzmena");
     tbody.innerHTML = "";
     for (const dp of lista) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${dp.naziv ?? ""}</td>
-            <td>${dp.opis ?? ""}</td>
-            <td>${dp.limitPokrića != null ? dp.limitPokrića.toFixed(2) : "/"}</td>
-            <td>${dp.fransiza != null ? dp.fransiza.toFixed(2) + "%" : "0%"}</td>
-            <td>${dp.dodatnaPremija?.toFixed(2) ?? "0.00"}</td>
-            <td class="text-end"></td>
+            <td style="font-size:.85rem;">${dp.naziv ?? ""}</td>
+            <td style="font-size:.85rem;">${dp.opis ?? ""}</td>
+            <td style="font-size:.85rem;">${dp.limitPokrića != null ? dp.limitPokrića.toFixed(2) : "/"}</td>
+            <td style="font-size:.85rem;">${dp.fransiza != null ? dp.fransiza.toFixed(2) + "%" : "0%"}</td>
+            <td style="font-size:.85rem;">${dp.dodatnaPremija?.toFixed(2) ?? "0.00"}</td>
+            <td class="text-end" style="width:70px;"></td>
         `;
         const btnObrisi = document.createElement("button");
         btnObrisi.className = "btn btn-sm btn-osig-crvena";
-        btnObrisi.textContent = "Obriši";
+        btnObrisi.textContent = "Ukloni";
         btnObrisi.onclick = async () => {
             if (!confirm(`Obrisati pokriće "${dp.naziv}"?`)) return;
-            try { await apiFetch(`/dodatnapokrica/${dp.pokriceId}`, { method: "DELETE" }); await ucitajPokrica(odabrana.polisaId); }
+            try { await apiFetch(`/dodatnapokrica/${dp.pokriceId}`, { method: "DELETE" }); await ucitajPokricaIzmena(punaOdabrana.polisaId); }
             catch (err) { prikaziGresku(document.getElementById("greskaPokrica"), err); }
         };
         tr.lastElementChild.appendChild(btnObrisi);
@@ -423,33 +493,98 @@ function prikaziPokrica(lista) {
     }
 }
 
-document.getElementById("formaPokrice").addEventListener("submit", async (e) => {
-    e.preventDefault();
+document.getElementById("btnDodajPokriceIzmena").addEventListener("click", async () => {
     const g = document.getElementById("greskaPokrica");
+    const dp = citajPokriceInpute("ezPk", g);
+    if (dp === null) return;
+    try {
+        await apiFetch("/dodatnapokrica", { method: "POST", body: JSON.stringify({ polisaId: punaOdabrana.polisaId, ...dp }) });
+        await ucitajPokricaIzmena(punaOdabrana.polisaId);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+});
+
+// ---------- Osiguranici (kad se osiguranik razlikuje od ugovaraca; ne za Putno, tamo vec
+// postoji "Osigurana lica" na samoj polisi). Ugradjeno direktno u Dodaj i Izmeni forme. ----------
+
+// -- Dodaj: polisa jos nema ID dok se ne snimi, pa se osiguranici privremeno drze u JS
+// listi i posalju tek posle uspesnog kreiranja polise (POST vraca novi polisaId). --
+
+function prikaziOsiguraniciNovi() {
+    const tbody = document.getElementById("tbodyOsiguraniciNovi");
+    tbody.innerHTML = "";
+    pendingOsiguranici.forEach((o, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${o.naziv}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingOsiguranici.splice(i, 1); prikaziOsiguraniciNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById("btnDodajOsiguranikaNovi").addEventListener("click", () => {
+    const klijentId = document.getElementById("osKlijentId").value;
+    const imePrezime = document.getElementById("osImePrezime").value.trim();
+    if (!klijentId && !imePrezime) { prikaziGresku(document.getElementById("greskaPolisa"), new Error("Izaberite registrovanog klijenta ili unesite ime i prezime.")); return; }
+
+    const naziv = klijentId ? sveKlijenti.find(k => k.klijentId === parseInt(klijentId))?.naziv : imePrezime;
+    pendingOsiguranici.push({ klijentId: klijentId ? parseInt(klijentId) : null, imePrezime, naziv });
+    document.getElementById("osKlijentId").value = "";
+    document.getElementById("osImePrezime").value = "";
+    prikaziOsiguraniciNovi();
+});
+
+// -- Izmeni: polisa vec ima ID, pa se osiguranici odmah salju na server. --
+
+async function ucitajOsiguraniciIzmena(polisaId) {
+    const g = document.getElementById("greskaOsiguranici");
+    g.classList.add("d-none");
+    try {
+        const lista = await apiFetch(`/ulogeklijenata/polisa/${polisaId}`);
+        prikaziOsiguraniciIzmena(lista);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+}
+
+function prikaziOsiguraniciIzmena(lista) {
+    const tbody = document.getElementById("tbodyOsiguraniciIzmena");
+    tbody.innerHTML = "";
+    for (const u of lista) {
+        const naziv = u.klijentNaziv ?? u.imePrezime ?? "";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${naziv}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = async () => {
+            if (!confirm(`Ukloniti "${naziv}" kao osiguranika ove polise?`)) return;
+            try { await apiFetch(`/ulogeklijenata/${u.ulogaId}`, { method: "DELETE" }); await ucitajOsiguraniciIzmena(punaOdabrana.polisaId); }
+            catch (err) { prikaziGresku(document.getElementById("greskaOsiguranici"), err); }
+        };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    }
+}
+
+document.getElementById("btnDodajOsiguranikaIzmena").addEventListener("click", async () => {
+    const g = document.getElementById("greskaOsiguranici");
     g.classList.add("d-none");
 
-    const naziv = document.getElementById("pkNaziv").value.trim();
-    if (!naziv) { prikaziGresku(g, new Error("Naziv je obavezan.")); return; }
+    const klijentId = document.getElementById("ezOsKlijentId").value;
+    const imePrezime = document.getElementById("ezOsImePrezime").value.trim();
+    if (!klijentId && !imePrezime) { prikaziGresku(g, new Error("Izaberite registrovanog klijenta ili unesite ime i prezime.")); return; }
 
-    const fransiza = parseFloat(document.getElementById("pkFransiza").value) || 0;
-    if (fransiza < 0 || fransiza > 100) { prikaziGresku(g, new Error("Franšiza je procenat, mora biti između 0 i 100.")); return; }
-
-    const limitRaw = document.getElementById("pkLimit").value;
-    const dto = {
-        polisaId: odabrana.polisaId,
-        naziv,
-        opis: document.getElementById("pkOpis").value.trim(),
-        limitPokrića: limitRaw ? parseFloat(limitRaw) : null,
-        fransiza,
-        dodatnaPremija: parseFloat(document.getElementById("pkPremija").value) || 0
-    };
-
+    const dto = { polisaId: punaOdabrana.polisaId, klijentId: klijentId ? parseInt(klijentId) : null, imePrezime, tipUloge: "OSIGURANIK" };
     try {
-        await apiFetch("/dodatnapokrica", { method: "POST", body: JSON.stringify(dto) });
-        e.target.reset();
-        document.getElementById("pkFransiza").value = "0";
-        document.getElementById("pkPremija").value = "0";
-        await ucitajPokrica(odabrana.polisaId);
+        await apiFetch("/ulogeklijenata", { method: "POST", body: JSON.stringify(dto) });
+        document.getElementById("ezOsKlijentId").value = "";
+        document.getElementById("ezOsImePrezime").value = "";
+        await ucitajOsiguraniciIzmena(punaOdabrana.polisaId);
     } catch (err) {
         prikaziGresku(g, err);
     }
@@ -520,6 +655,16 @@ async function ucitajComboove() {
                             document.getElementById("ezVozaci"), document.getElementById("ezOsiguranaLica")])
             popuniSelect(sel, sveKlijenti, "klijentId", k => k.naziv);
 
+        for (const sel of [document.getElementById("osKlijentId"), document.getElementById("ezOsKlijentId")]) {
+            popuniSelect(sel, sveKlijenti, "klijentId", k => k.naziv);
+            sel.insertAdjacentHTML("afterbegin", '<option value="">-- nije registrovan klijent --</option>');
+        }
+
+        for (const sel of [document.getElementById("kiKlijentId"), document.getElementById("ezKiKlijentId")]) {
+            popuniSelect(sel, sveKlijenti, "klijentId", k => k.naziv);
+            sel.insertAdjacentHTML("afterbegin", '<option value="">-- izaberite klijenta --</option>');
+        }
+
         for (const sel of [document.getElementById("voziloId"), document.getElementById("ezVoziloId")])
             popuniSelect(sel, svaVozila, "voziloId", v => `${v.registracija} — ${v.marka} ${v.model}`);
 
@@ -553,6 +698,8 @@ function azurirajVidljivostTipa(tip, prefiks) {
         const el = document.getElementById(prefiks ? `${prefiks}Red${sufiks}` : `red${sufiks}`);
         if (el) el.classList.toggle("d-none", t !== tip);
     }
+    // Putno osiguranje vec ima svoje posebno polje "Osigurana lica" na samoj polisi.
+    document.getElementById(prefiks ? `${prefiks}RedOsiguranici` : "redOsiguranici").classList.toggle("d-none", tip === "PUTNO");
 }
 
 document.getElementById("tip").addEventListener("change", (e) => azurirajVidljivostTipa(e.target.value, ""));
@@ -622,6 +769,15 @@ function napraviTipSpecificnoTelo(tip, prefiks, g) {
     }
 }
 
+document.getElementById("modalPolisa").addEventListener("show.bs.modal", () => {
+    pendingOsiguranici = [];
+    prikaziOsiguraniciNovi();
+    pendingPokrica = [];
+    prikaziPokricaNovi();
+    pendingKorisnici = [];
+    prikaziKorisniciNovi();
+});
+
 document.getElementById("formaPolisa").addEventListener("submit", async (e) => {
     e.preventDefault();
     const g = document.getElementById("greskaPolisa");
@@ -636,14 +792,42 @@ document.getElementById("formaPolisa").addEventListener("submit", async (e) => {
         datumPocetka: document.getElementById("datumPocetka").value,
         datumIsteka: document.getElementById("datumIsteka").value,
         osnovnaPremija: parseFloat(document.getElementById("premija").value),
-        valuta: document.getElementById("valuta").value
+        valuta: document.getElementById("valuta").value,
+        nacinPlacanja: document.getElementById("nacin").value
     };
 
     const dodatno = napraviTipSpecificnoTelo(tip, "", g);
     if (dodatno === null) return;
 
     try {
-        await apiFetch(putEndpointZaTip(tip), { method: "POST", body: JSON.stringify({ ...baza, ...dodatno }) });
+        const rezultat = await apiFetch(putEndpointZaTip(tip), { method: "POST", body: JSON.stringify({ ...baza, ...dodatno }) });
+        for (const o of pendingOsiguranici) {
+            try {
+                await apiFetch("/ulogeklijenata", {
+                    method: "POST",
+                    body: JSON.stringify({ polisaId: rezultat.polisaId, klijentId: o.klijentId, imePrezime: o.imePrezime, tipUloge: "OSIGURANIK" })
+                });
+            } catch (err) { /* polisa je vec snimljena - samo prijavi gresku za osiguranika, ne prekidaj */ prikaziGresku(g, err); }
+        }
+        for (const dp of pendingPokrica) {
+            try {
+                await apiFetch("/dodatnapokrica", { method: "POST", body: JSON.stringify({ polisaId: rezultat.polisaId, ...dp }) });
+            } catch (err) { prikaziGresku(g, err); }
+        }
+        for (const k of pendingKorisnici) {
+            try {
+                await apiFetch("/korisniciisplate", {
+                    method: "POST",
+                    body: JSON.stringify({ polisaId: rezultat.polisaId, klijentId: k.klijentId, imePrezime: k.imePrezime, procenatUdela: k.procenatUdela })
+                });
+            } catch (err) { prikaziGresku(g, err); }
+        }
+        pendingOsiguranici = [];
+        prikaziOsiguraniciNovi();
+        pendingPokrica = [];
+        prikaziPokricaNovi();
+        pendingKorisnici = [];
+        prikaziKorisniciNovi();
         bootstrap.Modal.getInstance(document.getElementById("modalPolisa")).hide();
         e.target.reset();
         azurirajVidljivostTipa(null, "");
@@ -716,6 +900,19 @@ function otvoriIzmeni(p) {
 
     azurirajVidljivostTipa(p.tipOsiguranja, "ez");
     popuniTipSpecificnaPoljaZaIzmenu(p);
+
+    document.getElementById("ezOsKlijentId").value = "";
+    document.getElementById("ezOsImePrezime").value = "";
+    if (p.tipOsiguranja !== "PUTNO") ucitajOsiguraniciIzmena(p.polisaId);
+
+    document.getElementById("greskaPokrica").classList.add("d-none");
+    ucitajPokricaIzmena(p.polisaId);
+
+    if (p.tipOsiguranja === "ZIVOTNO") {
+        document.getElementById("ezKiKlijentId").value = "";
+        document.getElementById("ezKiProcenat").value = "";
+        ucitajKorisniciIzmena(p.polisaId);
+    }
 
     modalIzmeni.show();
 }

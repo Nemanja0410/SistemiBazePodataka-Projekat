@@ -1,5 +1,6 @@
 using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using OsiguranjApp.DTOs;
 
@@ -173,7 +174,29 @@ namespace OsiguranjApp.Forme
             rtbDetalji.AppendText($"Datum odobrenja:  {(n.DatumOdobrenja != null ? n.DatumOdobrenja.Value.ToString("dd.MM.yyyy HH:mm") : "/")}\n");
             rtbDetalji.AppendText($"Zadnja prijava:   {(n.ZadnjaPrijava != null ? n.ZadnjaPrijava.Value.ToString("dd.MM.yyyy HH:mm") : "/")}\n");
             rtbDetalji.AppendText($"Prisilna promena lozinke: {(n.MoraPromenitiLozinku ? "DA" : "NE")}\n");
+
+            rtbDetalji.AppendText("\n── Istorija prijava (poslednjih 10) ──\n");
+            var istorija = DTOManager.vratiIstorijuPrijava(n.NalogId);
+            if (istorija.Count == 0)
+            {
+                rtbDetalji.AppendText("(nema zabeleženih pokušaja prijave)\n");
+                return;
+            }
+            foreach (var ip in istorija.Take(10))
+            {
+                string ishod = ip.Uspesno ? "✔ Uspešno" : $"✘ {NazivRazloga(ip.Razlog)}";
+                rtbDetalji.AppendText($"{ip.VremePokusaja:dd.MM.yyyy HH:mm} — {ishod}\n");
+            }
         }
+
+        private static string NazivRazloga(string? razlog) => razlog switch
+        {
+            "POGRESNA_LOZINKA"    => "Pogrešna lozinka",
+            "NALOG_ZAKLJUCAN"     => "Nalog zaključan",
+            "NALOG_NIJE_ODOBREN"  => "Nalog nije odobren",
+            "NEPOSTOJECI_NALOG"   => "Nepostojeći nalog",
+            _                     => razlog ?? ""
+        };
     }
 
     public class UnesiLozinkuForma : Form

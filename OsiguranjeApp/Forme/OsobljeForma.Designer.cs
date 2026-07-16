@@ -26,6 +26,8 @@ namespace OsiguranjApp.Forme
             btnDodajOstalo = NB("➕  Ostalo",  UiHelper.Zelena,      95,  ref bx);
             btnIzmeni= NB("✏️  Izmeni",  UiHelper.PlavaSvetla, 95,  ref bx);
             btnObrisi= NB("🗑️  Obriši",  UiHelper.Crvena,      90,  ref bx);
+            btnOblastiProcene = NB("📚  Oblasti procene", UiHelper.PlavaSvetla, 145, ref bx);
+            btnOblastiProcene.Visible = false;
             btnOsvezi= NB("🔄  Osveži",  UiHelper.Siva,        85,  ref bx);
             lblBroj= new Label { AutoSize = true, Location = new Point(bx + 6, 16), ForeColor = UiHelper.Siva, Text = "Ukupno: 0" };
 
@@ -33,9 +35,10 @@ namespace OsiguranjApp.Forme
             btnDodajOstalo.Click += btnDodajOstalo_Click;
             btnIzmeni.Click+= btnIzmeni_Click;
             btnObrisi.Click+= btnObrisi_Click;
+            btnOblastiProcene.Click += btnOblastiProcene_Click;
             btnOsvezi.Click+= btnOsvezi_Click;
 
-            pnlT.Controls.AddRange(new Control[] { cmbTip, btnDodajAgenta, btnDodajOstalo, btnIzmeni, btnObrisi, btnOsvezi, lblBroj });
+            pnlT.Controls.AddRange(new Control[] { cmbTip, btnDodajAgenta, btnDodajOstalo, btnIzmeni, btnObrisi, btnOblastiProcene, btnOsvezi, lblBroj });
 
             var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 660, BorderStyle = BorderStyle.None };
 
@@ -84,6 +87,7 @@ namespace OsiguranjApp.Forme
         private DataGridView dgvOsoblje = null!;
         private ComboBox     cmbTip = null!;
         private Button       btnDodajAgenta = null!, btnDodajOstalo = null!, btnIzmeni = null!, btnObrisi = null!, btnOsvezi = null!;
+        private Button       btnOblastiProcene = null!;
         private Label        lblBroj = null!, lblDetaljiNaziv = null!;
         private RichTextBox  rtbDetalji = null!;
     }

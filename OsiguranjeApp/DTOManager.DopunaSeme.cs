@@ -218,6 +218,110 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
+        // ---------- Nekretnina ----------
+
+        public static List<NekretninaBasic> vratiSveNekretnine()
+        {
+            var lista = new List<NekretninaBasic>();
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                foreach (var n in s.Query<Nekretnina>().OrderBy(x => x.Adresa))
+                    lista.Add(new NekretninaBasic
+                    {
+                        NekretninaId = n.NekretninaId, Adresa = n.Adresa, TipObjekta = n.TipObjekta,
+                        Povrsina = n.Povrsina, GodinaIzgradnje = n.GodinaIzgradnje,
+                        ProcenjenaVrednost = n.ProcenjenaVrednost
+                    });
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+            return lista;
+        }
+
+        public static void dodajNekretninu(NekretninaBasic dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                var n = new Nekretnina
+                {
+                    Adresa = dto.Adresa, TipObjekta = dto.TipObjekta,
+                    Povrsina = dto.Povrsina, GodinaIzgradnje = dto.GodinaIzgradnje,
+                    ProcenjenaVrednost = dto.ProcenjenaVrednost
+                };
+                s.Save(n);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void azurirajNekretninu(NekretninaBasic dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                Nekretnina n = s.Load<Nekretnina>(dto.NekretninaId);
+                n.Adresa = dto.Adresa; n.TipObjekta = dto.TipObjekta;
+                n.Povrsina = dto.Povrsina; n.GodinaIzgradnje = dto.GodinaIzgradnje;
+                n.ProcenjenaVrednost = dto.ProcenjenaVrednost;
+                s.SaveOrUpdate(n);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void obrisiNekretninu(int id)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                Nekretnina n = s.Load<Nekretnina>(id);
+                s.Delete(n);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        // ---------- Vozilo (azuriraj/obrisi - dodaj/vrati postoje u DTOManager.Stete.cs) ----------
+
+        public static void azurirajVozilo(VoziloBasic dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                Vozilo v = s.Load<Vozilo>(dto.VoziloId);
+                v.Registracija = dto.Registracija; v.Marka = dto.Marka; v.Model = dto.Model;
+                v.GodinaProizvodnje = dto.GodinaProizvodnje;
+                v.Vlasnik = s.Load<Klijent>(dto.VlasnikId);
+                s.SaveOrUpdate(v);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void obrisiVozilo(int id)
+        {
+            ProveriOvlascenje("ADMIN");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                Vozilo v = s.Load<Vozilo>(id);
+                s.Delete(v);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
         // ---------- Fotografija (uz stetu) ----------
 
         public static List<FotografijaBasic> vratiFotografijeZaStetu(int stetaId)
@@ -276,7 +380,7 @@ namespace OsiguranjApp
         private static void popuniBazuPolise(Polisa p, PolisaPregled dto, ISession s)
         {
             p.BrojPolise = dto.BrojPolise;
-            p.DatumZakljucenja = DateTime.Today;
+            if (p.PolisaId == 0) p.DatumZakljucenja = DateTime.Today; // samo pri kreiranju, ne pri izmeni
             p.DatumPocetka = dto.DatumPocetka;
             p.DatumIsteka = dto.DatumIsteka;
             p.Status = dto.Status ?? "AKTIVNA";
@@ -287,7 +391,7 @@ namespace OsiguranjApp
             p.Agent = dto.AgentId.HasValue ? s.Load<Agent>(dto.AgentId.Value) : null;
         }
 
-        public static void dodajPoljoprivrednoOsiguranje(PoljoprivrednoPregled dto)
+        public static int dodajPoljoprivrednoOsiguranje(PoljoprivrednoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -302,11 +406,40 @@ namespace OsiguranjApp
                 s.Save(p);
                 s.Flush();
                 s.Close();
+                return p.PolisaId;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); return 0; }
+        }
+
+        public static void azurirajPoljoprivrednoOsiguranje(PoljoprivrednoPregled dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                PoljoprivrednoOsiguranje p = s.Load<PoljoprivrednoOsiguranje>(dto.PolisaId);
+                var staro = UhvatiStaroStanjePolise(p);
+                var staroUseviIds = p.Usevi.Select(u => u.UsevId).ToList();
+                var staroZivotinjeIds = p.Zivotinje.Select(z => z.ZivotinjaId).ToList();
+                popuniBazuPolise(p, dto, s);
+                p.Usevi.Clear();
+                foreach (var usevId in dto.UseviIds) p.Usevi.Add(s.Load<Usev>(usevId));
+                p.Zivotinje.Clear();
+                foreach (var zivotinjaId in dto.ZivotinjeIds) p.Zivotinje.Add(s.Load<Zivotinja>(zivotinjaId));
+                var dodatnePromene = new List<string>();
+                var useviDiff = DiffPovezanihEntiteta<Usev>(s, "Usevi", staroUseviIds, dto.UseviIds);
+                if (useviDiff != null) dodatnePromene.Add(useviDiff);
+                var zivotinjeDiff = DiffPovezanihEntiteta<Zivotinja>(s, "Životinje", staroZivotinjeIds, dto.ZivotinjeIds);
+                if (zivotinjeDiff != null) dodatnePromene.Add(zivotinjeDiff);
+                ZabelezIstorijuPromene(s, p, staro, dodatnePromene);
+                s.SaveOrUpdate(p);
+                s.Flush();
+                s.Close();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        public static void dodajOsiguranjeOdgovornosti(OdgovornostPregled dto)
+        public static int dodajOsiguranjeOdgovornosti(OdgovornostPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -322,11 +455,31 @@ namespace OsiguranjApp
                 s.Save(o);
                 s.Flush();
                 s.Close();
+                return o.PolisaId;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); return 0; }
+        }
+
+        public static void azurirajOsiguranjeOdgovornosti(OdgovornostPregled dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                OsiguranjeOdgovornosti o = s.Load<OsiguranjeOdgovornosti>(dto.PolisaId);
+                var staro = UhvatiStaroStanjePolise(o);
+                popuniBazuPolise(o, dto, s);
+                o.VrstaOdgovornosti = dto.VrstaOdgovornosti;
+                o.LimitOdgovornosti = dto.LimitOdgovornosti;
+                ZabelezIstorijuPromene(s, o, staro);
+                s.SaveOrUpdate(o);
+                s.Flush();
+                s.Close();
             }
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
-        public static void dodajSpecijalizovanoOsiguranje(SpecijalizovanoPregled dto)
+        public static int dodajSpecijalizovanoOsiguranje(SpecijalizovanoPregled dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -340,6 +493,26 @@ namespace OsiguranjApp
                 };
                 popuniBazuPolise(sp, dto, s);
                 s.Save(sp);
+                s.Flush();
+                s.Close();
+                return sp.PolisaId;
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); return 0; }
+        }
+
+        public static void azurirajSpecijalizovanoOsiguranje(SpecijalizovanoPregled dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                SpecijalizovanoOsiguranje sp = s.Load<SpecijalizovanoOsiguranje>(dto.PolisaId);
+                var staro = UhvatiStaroStanjePolise(sp);
+                popuniBazuPolise(sp, dto, s);
+                sp.NazivSpecijalizacije = dto.NazivSpecijalizacije;
+                sp.OpisUslova = dto.OpisUslova;
+                ZabelezIstorijuPromene(s, sp, staro);
+                s.SaveOrUpdate(sp);
                 s.Flush();
                 s.Close();
             }

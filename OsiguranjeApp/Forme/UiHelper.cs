@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -27,6 +28,19 @@ namespace OsiguranjApp.Forme
         public static readonly Color Crvena       = Color.FromArgb(192, 57,  43);
         public static readonly Color Siva         = Color.FromArgb(120, 120, 120);
         public static readonly Color PozadinaForm = Color.FromArgb(240, 242, 245);
+
+        // Fiksan skup oblasti procene kojima se Procenitelj moze baviti (isto kao web klijent -
+        // ne slobodan unos, vec izbor iz zatvorene liste da nazivi ostanu dosledni u bazi).
+        public static readonly Dictionary<string, string> NaziviOblastiProcene = new()
+        {
+            ["VOZILO"] = "Vozilo",
+            ["IMOVINA"] = "Imovina",
+            ["ZDRAVSTVO"] = "Zdravstvo",
+            ["SPECIJALNE_STETE"] = "Specijalne štete"
+        };
+
+        public static string NazivOblasti(string? kljuc) =>
+            kljuc != null && NaziviOblastiProcene.TryGetValue(kljuc, out var naziv) ? naziv : kljuc ?? "";
 
         public static void StilizirajGrid(DataGridView dgv)
         {

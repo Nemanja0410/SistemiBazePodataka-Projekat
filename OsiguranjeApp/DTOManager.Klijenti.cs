@@ -167,6 +167,60 @@ namespace OsiguranjApp
             catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
         }
 
+        // ---------- Kontakt osobe (samo za PravnoLice/JavnaInstitucija) ----------
+
+        public static List<KontaktOsobaBasic> vratiKontakteZaKlijenta(int klijentId)
+        {
+            var lista = new List<KontaktOsobaBasic>();
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                foreach (var ko in s.Query<KontaktOsoba>().Where(x => x.Klijent!.KlijentId == klijentId))
+                    lista.Add(new KontaktOsobaBasic
+                    {
+                        KontaktId = ko.KontaktId, KlijentId = klijentId,
+                        Ime = ko.Ime, Prezime = ko.Prezime,
+                        Telefon = ko.Telefon, Email = ko.Email, Funkcija = ko.Funkcija
+                    });
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+            return lista;
+        }
+
+        public static void dodajKontakt(KontaktOsobaBasic dto)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                var ko = new KontaktOsoba
+                {
+                    Klijent = s.Load<Klijent>(dto.KlijentId),
+                    Ime = dto.Ime, Prezime = dto.Prezime,
+                    Telefon = dto.Telefon, Email = dto.Email, Funkcija = dto.Funkcija
+                };
+                s.Save(ko);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
+        public static void obrisiKontakt(int id)
+        {
+            ProveriOvlascenje("ADMIN", "AGENT");
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                KontaktOsoba ko = s.Load<KontaktOsoba>(id);
+                s.Delete(ko);
+                s.Flush();
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+        }
+
         private static KlijentPregled mapKlijentPregled(Klijent k)
         {
             if (k is FizickoLice fl)

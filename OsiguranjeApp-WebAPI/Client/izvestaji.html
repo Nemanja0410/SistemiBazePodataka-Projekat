@@ -25,6 +25,12 @@
             <li class="nav-item">
                 <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAgenti" type="button">👤 Agenti</button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabIsticu" type="button">⏰ Polise koje ističu</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSirovi" type="button">💾 Polise i klijenti</button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -36,7 +42,7 @@
                 <div class="card shadow-sm">
                     <div class="card-body p-0">
                         <table class="table table-hover mb-0">
-                            <thead><tr><th>Tip osiguranja</th><th>Broj polisa</th><th>Ukupna premija</th><th>Prosečna premija</th></tr></thead>
+                            <thead><tr><th>Tip osiguranja</th><th>Valuta</th><th>Broj polisa</th><th>Ukupna premija</th><th>Prosečna premija</th></tr></thead>
                             <tbody id="tbodyPolise"></tbody>
                         </table>
                     </div>
@@ -45,16 +51,16 @@
 
             <!-- Stete -->
             <div class="tab-pane fade" id="tabStete">
-                <div class="d-flex justify-content-end mb-2">
-                    <button class="btn btn-osig-plava btn-sm" id="btnExportStete">💾 Izvezi CSV (po statusu)</button>
-                </div>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <div class="card shadow-sm">
-                            <div class="card-header">Po vrsti štete</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                Po vrsti štete
+                                <button class="btn btn-osig-plava btn-sm" id="btnExportVrsta">💾 CSV</button>
+                            </div>
                             <div class="card-body p-0">
                                 <table class="table table-hover mb-0">
-                                    <thead><tr><th>Vrsta štete</th><th>Broj</th><th>Ukupno</th></tr></thead>
+                                    <thead><tr><th>Vrsta štete</th><th>Valuta</th><th>Broj</th><th>Ukupno</th></tr></thead>
                                     <tbody id="tbodyVrsta"></tbody>
                                 </table>
                             </div>
@@ -62,10 +68,13 @@
                     </div>
                     <div class="col-md-6">
                         <div class="card shadow-sm">
-                            <div class="card-header">Po statusu</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                Po statusu
+                                <button class="btn btn-osig-plava btn-sm" id="btnExportStete">💾 CSV</button>
+                            </div>
                             <div class="card-body p-0">
                                 <table class="table table-hover mb-0">
-                                    <thead><tr><th>Status</th><th>Broj</th><th>Ukupno</th><th>Prosek</th></tr></thead>
+                                    <thead><tr><th>Status</th><th>Valuta</th><th>Broj</th><th>Ukupno</th><th>Prosek</th></tr></thead>
                                     <tbody id="tbodyStatus"></tbody>
                                 </table>
                             </div>
@@ -85,6 +94,56 @@
                             <thead><tr><th>Agent</th><th>Tip</th><th>Region</th><th>Br. polisa</th><th>Provizija %</th></tr></thead>
                             <tbody id="tbodyAgenti"></tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Polise koje isticu -->
+            <div class="tab-pane fade" id="tabIsticu">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-osig-plava btn-sm" id="btnExportIsticu">💾 Izvezi CSV</button>
+                </div>
+                <p class="text-muted small">Aktivne polise koje ističu u narednih 30 dana, sortirano po hitnosti.</p>
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+                        <table class="table table-hover mb-0">
+                            <thead><tr><th>Broj polise</th><th>Tip</th><th>Ugovarač</th><th>Datum isteka</th><th>Preostalo</th></tr></thead>
+                            <tbody id="tbodyIsticu"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sirovi podaci: pune liste polisa i klijenata za preuzimanje -->
+            <div class="tab-pane fade" id="tabSirovi">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                Sve polise
+                                <button class="btn btn-osig-plava btn-sm" id="btnExportSveP">💾 Izvezi CSV</button>
+                            </div>
+                            <div class="card-body p-0" style="max-height:500px; overflow-y:auto;">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead><tr><th>Broj polise</th><th>Tip</th><th>Ugovarač</th><th>Premija</th><th>Status</th></tr></thead>
+                                    <tbody id="tbodySveP"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                Svi klijenti
+                                <button class="btn btn-osig-plava btn-sm" id="btnExportSviK">💾 Izvezi CSV</button>
+                            </div>
+                            <div class="card-body p-0" style="max-height:500px; overflow-y:auto;">
+                                <table class="table table-hover table-sm mb-0">
+                                    <thead><tr><th>Naziv</th><th>Tip</th><th>Telefon</th><th>Status</th></tr></thead>
+                                    <tbody id="tbodySviK"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

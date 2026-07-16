@@ -115,7 +115,7 @@ namespace OsiguranjApp
             return rezultat;
         }
 
-        public static void dodajStetu(StetaBasic dto)
+        public static int dodajStetu(StetaBasic dto)
         {
             ProveriOvlascenje("ADMIN", "AGENT");
             try
@@ -135,6 +135,7 @@ namespace OsiguranjApp
                 s.Save(st);
                 s.Flush();
                 s.Close();
+                return st.StetaId;
             }
             catch (Exception) { throw; }
         }

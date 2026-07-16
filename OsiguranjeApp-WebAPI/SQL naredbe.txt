@@ -663,3 +663,16 @@ ALTER TABLE ZDRAVSTVENO_OSIGURANJE ADD pokrica VARCHAR2(1000);
 -- ---------- Fransiza kod dodatnog pokrica je procenat (0-100), ne fiksan iznos ----------
 
 ALTER TABLE DODATNO_POKRICE ADD CONSTRAINT chk_dp_fransiza CHECK (fransiza BETWEEN 0 AND 100);
+
+-- ---------- Osiguranik na polisi moze biti i osoba koja nije registrovan klijent u bazi
+-- (npr. dete ugovaraca) - klijent_id postaje opcion, dodaje se slobodan tekst ime_prezime,
+-- isti obrazac kao vec postojeca OSTECENO_LICE tabela ----------
+
+ALTER TABLE ULOGA_KLIJENTA MODIFY (klijent_id NULL);
+ALTER TABLE ULOGA_KLIJENTA ADD ime_prezime VARCHAR2(200);
+
+-- ---------- Korisnik isplate takodje moze biti osoba koja nije registrovan klijent
+-- (isti obrazac kao gore) ----------
+
+ALTER TABLE KORISNIK_ISPLATE MODIFY (klijent_id NULL);
+ALTER TABLE KORISNIK_ISPLATE ADD ime_prezime VARCHAR2(200);

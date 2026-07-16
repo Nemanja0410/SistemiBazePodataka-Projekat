@@ -24,7 +24,8 @@ namespace OsiguranjApp.Mapiranja
         {
             Table("ULOGA_KLIJENTA");
             Id(x => x.UlogaId).Column("ULOGA_ID").GeneratedBy.Sequence("ULOGA_ID_SEQ");
-            References(x => x.Klijent).Column("KLIJENT_ID").Not.Nullable();
+            References(x => x.Klijent).Column("KLIJENT_ID");
+            Map(x => x.ImePrezime).Column("IME_PREZIME");
             References(x => x.Polisa).Column("POLISA_ID").Not.Nullable();
             Map(x => x.TipUloge).Column("TIP_ULOGE").Not.Nullable();
         }
@@ -37,7 +38,8 @@ namespace OsiguranjApp.Mapiranja
             Table("KORISNIK_ISPLATE");
             Id(x => x.KorisnikId).Column("KORISNIK_ID").GeneratedBy.Sequence("KORISNIK_ID_SEQ");
             References(x => x.Polisa).Column("POLISA_ID").Not.Nullable();
-            References(x => x.Klijent).Column("KLIJENT_ID").Not.Nullable();
+            References(x => x.Klijent).Column("KLIJENT_ID");
+            Map(x => x.ImePrezime).Column("IME_PREZIME");
             Map(x => x.ProcenatUdela).Column("PROCENAT_UDELA");
         }
     }

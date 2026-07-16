@@ -93,12 +93,14 @@ namespace OsiguranjApp
             {
                 ISession s = DataLayer.GetSession();
                 Polisa   p = s.Load<Polisa>(dto.PolisaId);
+                var staro = UhvatiStaroStanjePolise(p);
                 p.BrojPolise = dto.BrojPolise;
                 p.DatumPocetka = dto.DatumPocetka; p.DatumIsteka = dto.DatumIsteka;
                 p.Status = dto.Status; p.OsnovnaPremija = dto.OsnovnaPremija;
                 p.Valuta = dto.Valuta; p.NacinPlacanja = dto.NacinPlacanja;
                 p.Ugovarac = s.Load<Klijent>(dto.UgovaracId);
                 p.Agent = dto.AgentId.HasValue ? s.Load<Agent>(dto.AgentId.Value) : null;
+                ZabelezIstorijuPromene(s, p, staro);
                 s.SaveOrUpdate(p);
                 s.Flush();
                 s.Close();

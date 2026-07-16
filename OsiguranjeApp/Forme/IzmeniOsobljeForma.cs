@@ -1,76 +1,18 @@
 using System;
-using System.Drawing;
 using System.Windows.Forms;
 using OsiguranjApp.DTOs;
 
 namespace OsiguranjApp.Forme
 {
-    public class IzmeniOsobljeForma : Form
+    public partial class IzmeniOsobljeForma : Form
     {
         private readonly OsobljePregled _osoblje;
-        private TextBox  txtIme = null!, txtPrezime = null!, txtAdresa = null!, txtTelefon = null!, txtEmail = null!;
-        private ComboBox cmbStatus = null!, cmbTipPravnika = null!;
-        private TextBox  txtBarBroj = null!, txtBrojLicence = null!;
-        private TableLayoutPanel tbl = null!;
-        private Button   btnSacuvaj = null!, btnOdustani = null!;
 
         public IzmeniOsobljeForma(OsobljePregled o)
         {
             _osoblje = o;
             InitializeComponent();
             PopuniFormu();
-        }
-
-        private void InitializeComponent()
-        {
-            this.Text            = $"Izmeni — {_osoblje.Ime} {_osoblje.Prezime}";
-            this.Size            = new Size(450, 430);
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox     = false;
-            this.StartPosition   = FormStartPosition.CenterParent;
-            this.Font            = new Font("Segoe UI", 9f);
-            this.BackColor       = Color.White;
-
-            bool jePravnik     = _osoblje.TipOsoblja == "PRAVNIK";
-            bool jeProcenitelj = _osoblje.TipOsoblja == "PROCENITELJ";
-
-            tbl = UiHelper.NapraviLayout(10);
-
-            txtIme     = UiHelper.DodajRed(tbl, 0, "Ime *:");
-            txtPrezime = UiHelper.DodajRed(tbl, 1, "Prezime *:");
-            txtAdresa  = UiHelper.DodajRed(tbl, 2, "Adresa:");
-            txtTelefon = UiHelper.DodajRed(tbl, 3, "Telefon:");
-            txtEmail   = UiHelper.DodajRed(tbl, 4, "Email:");
-            cmbStatus  = UiHelper.DodajComboRed(tbl, 5, "Status:");
-            cmbStatus.Items.AddRange(new[] { "AKTIVAN", "NEAKTIVAN", "SUSPENDOVAN" });
-
-            cmbTipPravnika = UiHelper.DodajComboRed(tbl, 6, "Tip pravnika:");
-            cmbTipPravnika.Items.AddRange(new[] { "INTERNI", "EKSTERNI" });
-            txtBarBroj     = UiHelper.DodajRed(tbl, 7, "Broj advokata:");
-            txtBrojLicence = UiHelper.DodajRed(tbl, 8, "Broj licence:");
-
-            cmbTipPravnika.Visible = jePravnik;
-            txtBarBroj.Visible     = jePravnik;
-            tbl.GetControlFromPosition(0, 6)!.Visible = jePravnik;
-            tbl.GetControlFromPosition(0, 7)!.Visible = jePravnik;
-            tbl.RowStyles[6].Height = jePravnik ? 36 : 0;
-            tbl.RowStyles[7].Height = jePravnik ? 36 : 0;
-
-            txtBrojLicence.Visible = jeProcenitelj;
-            tbl.GetControlFromPosition(0, 8)!.Visible = jeProcenitelj;
-            tbl.RowStyles[8].Height = jeProcenitelj ? 36 : 0;
-
-            var (btnOk, btnCancel) = UiHelper.DodajDugmadPanel(tbl, 9);
-            btnSacuvaj  = btnOk;
-            btnOdustani = btnCancel;
-            btnSacuvaj.Click  += BtnSacuvaj_Click;
-            btnOdustani.Click += (s, e) => { DialogResult = DialogResult.Cancel; Close(); };
-
-            this.Controls.Add(tbl);
-
-            int sadrzajVisina = 0;
-            foreach (RowStyle rs in tbl.RowStyles) sadrzajVisina += (int)rs.Height;
-            this.ClientSize = new Size(450, sadrzajVisina + tbl.Padding.Top + tbl.Padding.Bottom);
         }
 
         private void PopuniFormu()
@@ -82,7 +24,12 @@ namespace OsiguranjApp.Forme
             txtEmail.Text          = _osoblje.Email ?? "";
             cmbStatus.SelectedItem = _osoblje.Status ?? "AKTIVAN";
 
-            if (_osoblje is OsobljeBasic ob)
+            if (_osoblje is LekarBasic lb)
+            {
+                txtBrojLicence.Text     = lb.LicencaBroj ?? "";
+                txtSpecijalizacija.Text = lb.Specijalizacija ?? "";
+            }
+            else if (_osoblje is OsobljeBasic ob)
             {
                 cmbTipPravnika.SelectedItem = ob.TipPravnika;
                 txtBarBroj.Text             = ob.BarBroj ?? "";
@@ -97,22 +44,40 @@ namespace OsiguranjApp.Forme
             if (string.IsNullOrWhiteSpace(txtPrezime.Text))
             { MessageBox.Show("Prezime je obavezno.", "Validacija"); txtPrezime.Focus(); return; }
 
-            var dto = new OsobljeBasic
+            bool uspeh;
+            if (_osoblje.TipOsoblja == "LEKAR")
             {
-                OsobljeId   = _osoblje.OsobljeId,
-                TipOsoblja  = _osoblje.TipOsoblja,
-                Ime         = txtIme.Text.Trim(),
-                Prezime     = txtPrezime.Text.Trim(),
-                Adresa      = txtAdresa.Text.Trim(),
-                Telefon     = txtTelefon.Text.Trim(),
-                Email       = txtEmail.Text.Trim(),
-                Status      = cmbStatus.SelectedItem?.ToString(),
-                TipPravnika = cmbTipPravnika.Visible ? cmbTipPravnika.SelectedItem?.ToString() : null,
-                BarBroj     = cmbTipPravnika.Visible ? txtBarBroj.Text.Trim() : null,
-                BrojLicence = txtBrojLicence.Visible ? txtBrojLicence.Text.Trim() : null
-            };
+                var dtoLekar = new LekarBasic
+                {
+                    OsobljeId = _osoblje.OsobljeId,
+                    Ime = txtIme.Text.Trim(), Prezime = txtPrezime.Text.Trim(),
+                    Adresa = txtAdresa.Text.Trim(), Telefon = txtTelefon.Text.Trim(),
+                    Email = txtEmail.Text.Trim(), Status = cmbStatus.SelectedItem?.ToString(),
+                    LicencaBroj = txtBrojLicence.Text.Trim(),
+                    Specijalizacija = txtSpecijalizacija.Text.Trim()
+                };
+                uspeh = UiHelper.PokusajAkciju(() => DTOManager.azurirajLekara(dtoLekar));
+            }
+            else
+            {
+                var dto = new OsobljeBasic
+                {
+                    OsobljeId   = _osoblje.OsobljeId,
+                    TipOsoblja  = _osoblje.TipOsoblja,
+                    Ime         = txtIme.Text.Trim(),
+                    Prezime     = txtPrezime.Text.Trim(),
+                    Adresa      = txtAdresa.Text.Trim(),
+                    Telefon     = txtTelefon.Text.Trim(),
+                    Email       = txtEmail.Text.Trim(),
+                    Status      = cmbStatus.SelectedItem?.ToString(),
+                    TipPravnika = cmbTipPravnika.Visible ? cmbTipPravnika.SelectedItem?.ToString() : null,
+                    BarBroj     = cmbTipPravnika.Visible ? txtBarBroj.Text.Trim() : null,
+                    BrojLicence = txtBrojLicence.Visible ? txtBrojLicence.Text.Trim() : null
+                };
+                uspeh = UiHelper.PokusajAkciju(() => DTOManager.azurirajOsoblje(dto));
+            }
 
-            if (!UiHelper.PokusajAkciju(() => DTOManager.azurirajOsoblje(dto))) return;
+            if (!uspeh) return;
             DialogResult = DialogResult.OK;
             Close();
         }

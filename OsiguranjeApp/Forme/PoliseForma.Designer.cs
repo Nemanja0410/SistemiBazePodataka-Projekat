@@ -28,18 +28,20 @@ namespace OsiguranjApp.Forme
             cmbStatus.SelectedIndexChanged += cmbStatus_SelectedIndexChanged;
 
             int bx = 404;
-            btnDodaj  = NB("➕  Dodaj",  UiHelper.Zelena,      100, ref bx);
-            btnIzmeni = NB("✏️  Izmeni", UiHelper.PlavaSvetla, 95,  ref bx);
-            btnObrisi = NB("🗑️  Obriši", UiHelper.Crvena,      90,  ref bx);
-            btnOsvezi = NB("🔄  Osveži", UiHelper.Siva,        88,  ref bx);
-            lblBroj   = new Label { AutoSize = true, Location = new Point(bx + 6, 16), ForeColor = UiHelper.Siva, Text = "Ukupno: 0" };
+            btnDodaj    = NB("➕  Dodaj",     UiHelper.Zelena,      100, ref bx);
+            btnIzmeni   = NB("✏️  Izmeni",    UiHelper.PlavaSvetla, 95,  ref bx);
+            btnObrisi   = NB("🗑️  Obriši",    UiHelper.Crvena,      90,  ref bx);
+            btnIstorija = NB("🕒  Istorija",  UiHelper.Siva,        95,  ref bx);
+            btnOsvezi   = NB("🔄  Osveži",    UiHelper.Siva,        88,  ref bx);
+            lblBroj     = new Label { AutoSize = true, Location = new Point(bx + 6, 16), ForeColor = UiHelper.Siva, Text = "Ukupno: 0" };
 
-            btnDodaj.Click  += btnDodaj_Click;
-            btnIzmeni.Click += btnIzmeni_Click;
-            btnObrisi.Click += btnObrisi_Click;
-            btnOsvezi.Click += btnOsvezi_Click;
+            btnDodaj.Click    += btnDodaj_Click;
+            btnIzmeni.Click   += btnIzmeni_Click;
+            btnObrisi.Click   += btnObrisi_Click;
+            btnIstorija.Click += btnIstorija_Click;
+            btnOsvezi.Click   += btnOsvezi_Click;
 
-            pnlT.Controls.AddRange(new Control[] { cmbTip, cmbStatus, btnDodaj, btnIzmeni, btnObrisi, btnOsvezi, lblBroj });
+            pnlT.Controls.AddRange(new Control[] { cmbTip, cmbStatus, btnDodaj, btnIzmeni, btnObrisi, btnIstorija, btnOsvezi, lblBroj });
 
             var split = new SplitContainer { Dock = DockStyle.Fill, SplitterDistance = 680, BorderStyle = BorderStyle.None };
 
@@ -87,7 +89,7 @@ namespace OsiguranjApp.Forme
 
         private DataGridView dgvPolise = null!;
         private ComboBox     cmbTip = null!, cmbStatus = null!;
-        private Button       btnDodaj = null!, btnIzmeni = null!, btnObrisi = null!, btnOsvezi = null!;
+        private Button       btnDodaj = null!, btnIzmeni = null!, btnObrisi = null!, btnOsvezi = null!, btnIstorija = null!;
         private Label        lblBroj = null!, lblDetaljiNaziv = null!;
         private RichTextBox  rtbDetalji = null!;
     }

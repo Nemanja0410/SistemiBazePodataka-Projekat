@@ -38,7 +38,7 @@ namespace OsiguranjApp.Forme
                         st.StetaId, st.BrojStete, st.VrstaStete,
                         st.PodnosilacNaziv, st.BrojPolise,
                         st.ProcenjeniIznos.HasValue
-                            ? $"{st.ProcenjeniIznos.Value:N2} RSD" : "/",
+                            ? $"{st.ProcenjeniIznos.Value:N2} {st.Valuta ?? "RSD"}" : "/",
                         st.Status,
                         st.DatumPrijave.ToString("dd.MM.yyyy"));
 
@@ -89,7 +89,7 @@ namespace OsiguranjApp.Forme
         {
             var st = odabranaSteta();
             if (st == null) { MessageBox.Show("Izaberite štetu.", "Info"); return; }
-            var f = new IzmeniSteteForma(DTOManager.vratiStetu(st.StetaId));
+            var f = new IzmeniSteteForma(DTOManager.vratiStetuDetaljno(st.StetaId));
             if (f.ShowDialog() == DialogResult.OK) ucitajStete();
         }
 
@@ -140,7 +140,59 @@ namespace OsiguranjApp.Forme
             rtbDetalji.AppendText("── Opis ──────────────────────────────\n");
             rtbDetalji.AppendText($"{st.OpisDogodjaja}\n");
             if (st.ProcenjeniIznos.HasValue)
-                rtbDetalji.AppendText($"\nProcenjeni iznos: {st.ProcenjeniIznos.Value:N2} RSD\n");
+                rtbDetalji.AppendText($"\nProcenjeni iznos: {st.ProcenjeniIznos.Value:N2} {st.Valuta ?? "RSD"}\n");
+
+            try
+            {
+                var detalji = DTOManager.vratiStetuDetaljno(st.StetaId);
+                switch (detalji)
+                {
+                    case AutoStetaBasic a:
+                        rtbDetalji.AppendText($"\n── Auto šteta ─────────────────────────\n");
+                        rtbDetalji.AppendText($"Vozilo:            {a.VoziloOpis ?? "/"}\n");
+                        rtbDetalji.AppendText($"Zapisnik policije: {a.ZapisnikPolicije}\n");
+                        rtbDetalji.AppendText($"Servis:            {a.Servis}\n");
+                        break;
+                    case ZdravstvenaStetaBasic z:
+                        rtbDetalji.AppendText($"\n── Zdravstvena šteta ──────────────────\n");
+                        rtbDetalji.AppendText($"Dijagnoza:      {z.Dijagnoza}\n");
+                        rtbDetalji.AppendText($"Med. dok.:      {z.MedicinskaDocumentacija}\n");
+                        rtbDetalji.AppendText($"Ustanova:       {z.ZdravstvenaUstanova}\n");
+                        rtbDetalji.AppendText($"Lekar:          {z.LekarIme ?? "/"}\n");
+                        break;
+                    case ImovinskStetaBasic im:
+                        rtbDetalji.AppendText($"\n── Imovinska šteta ────────────────────\n");
+                        rtbDetalji.AppendText($"Procena oštećenja: {im.ProcenaOstecenja}\n");
+                        rtbDetalji.AppendText($"Izvođač sanacije:  {im.IzvodjacSanacije}\n");
+                        break;
+                }
+
+                var sb = (StetaBasic)detalji;
+                if (sb.FazeObrade.Count > 0)
+                {
+                    rtbDetalji.AppendText($"\n── Faze obrade ({sb.FazeObrade.Count}) ──────────\n");
+                    foreach (var f in sb.FazeObrade) rtbDetalji.AppendText($"• {f.NazivFaze} — {f.Odluka ?? "u toku"}\n");
+                }
+                if (sb.ProceneSteta.Count > 0)
+                {
+                    rtbDetalji.AppendText($"\n── Procene štete ({sb.ProceneSteta.Count}) ──────────\n");
+                    foreach (var p in sb.ProceneSteta) rtbDetalji.AppendText($"• {p.DatumProc:dd.MM.yyyy} — {p.ProceniteljIme}: {p.ProcenjeniIznos:N2} {st.Valuta ?? "RSD"}\n");
+                }
+
+                var lica = DTOManager.vratiOstecenaLicaZaStetu(st.StetaId);
+                if (lica.Count > 0)
+                {
+                    rtbDetalji.AppendText($"\n── Oštećena lica ({lica.Count}) ──────────\n");
+                    foreach (var l in lica) rtbDetalji.AppendText($"• {l} — {l.OpisPovrede}\n");
+                }
+                var predmeti = DTOManager.vratiOsteceniPredmetiZaStetu(st.StetaId);
+                if (predmeti.Count > 0)
+                {
+                    rtbDetalji.AppendText($"\n── Oštećeni predmeti ({predmeti.Count}) ──────────\n");
+                    foreach (var p in predmeti) rtbDetalji.AppendText($"• {p.TipPredmeta} — {p.OpisOstecenja}\n");
+                }
+            }
+            catch { }
         }
     }
 }

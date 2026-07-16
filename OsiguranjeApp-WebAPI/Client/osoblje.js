@@ -296,6 +296,8 @@ function azurirajVidljivostOstalo() {
     document.getElementById("oRedPravnik1").classList.toggle("d-none", tip !== "PRAVNIK");
     document.getElementById("oRedPravnik2").classList.toggle("d-none", tip !== "PRAVNIK");
     document.getElementById("oRedProcenitelj").classList.toggle("d-none", tip !== "PROCENITELJ");
+    document.getElementById("oRedLekar1").classList.toggle("d-none", tip !== "LEKAR");
+    document.getElementById("oRedLekar2").classList.toggle("d-none", tip !== "LEKAR");
 }
 document.getElementById("oTip").addEventListener("change", azurirajVidljivostOstalo);
 azurirajVidljivostOstalo();
@@ -320,11 +322,17 @@ document.getElementById("formaOstalo").addEventListener("submit", async (e) => {
         status: document.getElementById("oStatus").value,
         tipPravnika: tip === "PRAVNIK" ? document.getElementById("oTipPravnika").value : null,
         barBroj: tip === "PRAVNIK" ? document.getElementById("oBarBroj").value.trim() : null,
-        brojLicence: tip === "PROCENITELJ" ? document.getElementById("oBrojLicence").value.trim() : null
+        brojLicence: tip === "PROCENITELJ" ? document.getElementById("oBrojLicence").value.trim() : null,
+        specijalizacija: tip === "LEKAR" ? document.getElementById("oSpecijalizacija").value.trim() : null,
+        licencaBroj: tip === "LEKAR" ? document.getElementById("oLicencaBroj").value.trim() : null
     };
 
+    // Lekar ima sopstveni endpoint (kao agent) jer generican /osoblje ne postavlja
+    // Specijalizacija/LicencaBroj polja.
+    const endpoint = tip === "LEKAR" ? "/osoblje/lekari" : "/osoblje";
+
     try {
-        await apiFetch("/osoblje", { method: "POST", body: JSON.stringify(dto) });
+        await apiFetch(endpoint, { method: "POST", body: JSON.stringify(dto) });
         bootstrap.Modal.getInstance(document.getElementById("modalOstalo")).hide();
         e.target.reset();
         azurirajVidljivostOstalo();
@@ -349,15 +357,22 @@ function otvoriIzmeni(o) {
 
     const jePravnik = o.tipOsoblja === "PRAVNIK";
     const jeProcenitelj = o.tipOsoblja === "PROCENITELJ";
+    const jeLekar = o.tipOsoblja === "LEKAR";
     document.getElementById("ezRedPravnik1").classList.toggle("d-none", !jePravnik);
     document.getElementById("ezRedPravnik2").classList.toggle("d-none", !jePravnik);
     document.getElementById("ezRedProcenitelj").classList.toggle("d-none", !jeProcenitelj);
+    document.getElementById("ezRedLekar1").classList.toggle("d-none", !jeLekar);
+    document.getElementById("ezRedLekar2").classList.toggle("d-none", !jeLekar);
     if (jePravnik) {
         document.getElementById("ezTipPravnika").value = o.tipPravnika ?? "INTERNI";
         document.getElementById("ezBarBroj").value = o.barBroj ?? "";
     }
     if (jeProcenitelj) {
         document.getElementById("ezBrojLicence").value = o.brojLicence ?? "";
+    }
+    if (jeLekar) {
+        document.getElementById("ezSpecijalizacija").value = o.specijalizacija ?? "";
+        document.getElementById("ezLicencaBroj").value = o.licencaBroj ?? "";
     }
 
     offDetalji.hide();
@@ -372,6 +387,7 @@ document.getElementById("formaIzmeni").addEventListener("submit", async (e) => {
     const id = document.getElementById("ezId").value;
     const jePravnik = !document.getElementById("ezRedPravnik1").classList.contains("d-none");
     const jeProcenitelj = !document.getElementById("ezRedProcenitelj").classList.contains("d-none");
+    const jeLekar = !document.getElementById("ezRedLekar1").classList.contains("d-none");
 
     const dto = {
         ime: document.getElementById("ezIme").value.trim(),
@@ -382,11 +398,16 @@ document.getElementById("formaIzmeni").addEventListener("submit", async (e) => {
         status: document.getElementById("ezStatus").value,
         tipPravnika: jePravnik ? document.getElementById("ezTipPravnika").value : null,
         barBroj: jePravnik ? document.getElementById("ezBarBroj").value.trim() : null,
-        brojLicence: jeProcenitelj ? document.getElementById("ezBrojLicence").value.trim() : null
+        brojLicence: jeProcenitelj ? document.getElementById("ezBrojLicence").value.trim() : null,
+        specijalizacija: jeLekar ? document.getElementById("ezSpecijalizacija").value.trim() : null,
+        licencaBroj: jeLekar ? document.getElementById("ezLicencaBroj").value.trim() : null
     };
 
+    // Lekar ima sopstveni endpoint (generican /osoblje/{id} ne azurira Specijalizacija/LicencaBroj).
+    const endpoint = jeLekar ? `/osoblje/lekari/${id}` : `/osoblje/${id}`;
+
     try {
-        await apiFetch(`/osoblje/${id}`, { method: "PUT", body: JSON.stringify(dto) });
+        await apiFetch(endpoint, { method: "PUT", body: JSON.stringify(dto) });
         modalIzmeni.hide();
         ucitajOsoblje();
     } catch (err) {

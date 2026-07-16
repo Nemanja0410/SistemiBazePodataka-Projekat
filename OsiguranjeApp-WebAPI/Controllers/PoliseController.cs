@@ -56,8 +56,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("auto")]
         public IActionResult DodajAuto([FromBody] AutoPolisaPregled dto)
         {
-            DTOManager.dodajAutoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajAutoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("auto/{id:int}")]
@@ -76,8 +76,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("zivotno")]
         public IActionResult DodajZivotno([FromBody] ZivotnoPregled dto)
         {
-            DTOManager.dodajZivotnoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajZivotnoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("zivotno/{id:int}")]
@@ -96,8 +96,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("zdravstveno")]
         public IActionResult DodajZdravstveno([FromBody] ZdravstvenoPregled dto)
         {
-            DTOManager.dodajZdravstvenoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajZdravstvenoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("zdravstveno/{id:int}")]
@@ -116,8 +116,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("putno")]
         public IActionResult DodajPutno([FromBody] PutnoPregled dto)
         {
-            DTOManager.dodajPutnoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajPutnoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("putno/{id:int}")]
@@ -136,8 +136,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("imovinsko")]
         public IActionResult DodajImovinsko([FromBody] ImovinskoPregled dto)
         {
-            DTOManager.dodajImovinskoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajImovinskoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("imovinsko/{id:int}")]
@@ -156,8 +156,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("poljoprivredno")]
         public IActionResult DodajPoljoprivredno([FromBody] PoljoprivrednoPregled dto)
         {
-            DTOManager.dodajPoljoprivrednoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajPoljoprivrednoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("poljoprivredno/{id:int}")]
@@ -176,8 +176,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("odgovornost")]
         public IActionResult DodajOdgovornost([FromBody] OdgovornostPregled dto)
         {
-            DTOManager.dodajOsiguranjeOdgovornosti(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajOsiguranjeOdgovornosti(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("odgovornost/{id:int}")]
@@ -196,8 +196,8 @@ namespace OsiguranjApp.Controllers
         [HttpPost("specijalizovano")]
         public IActionResult DodajSpecijalizovano([FromBody] SpecijalizovanoPregled dto)
         {
-            DTOManager.dodajSpecijalizovanoOsiguranje(dto);
-            return StatusCode(201);
+            int id = DTOManager.dodajSpecijalizovanoOsiguranje(dto);
+            return StatusCode(201, new { polisaId = id });
         }
 
         [HttpPut("specijalizovano/{id:int}")]

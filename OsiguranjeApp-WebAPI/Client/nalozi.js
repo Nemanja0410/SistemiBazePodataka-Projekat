@@ -201,6 +201,14 @@ function datumVreme(iso) {
 
 // renderDetalje: samo puni sadrzaj panela (bez otvaranja) - koristi se i pri prvom
 // otvaranju i za osvezavanje vec otvorenog panela posle neke akcije.
+const NAZIVI_RAZLOGA = {
+    USPESNO: "Uspešna prijava",
+    POGRESNA_LOZINKA: "Pogrešna lozinka",
+    NALOG_ZAKLJUCAN: "Nalog zaključan",
+    NALOG_NIJE_ODOBREN: "Nalog nije odobren",
+    NEPOSTOJECI_NALOG: "Nepostojeći nalog"
+};
+
 function renderDetalje(n) {
     trenutniNalogId = n.nalogId;
     document.getElementById("detaljiNaziv").textContent = n.korisnickoIme;
@@ -216,7 +224,32 @@ function renderDetalje(n) {
             <tr><th>Datum odobrenja</th><td>${datumVreme(n.datumOdobrenja)}</td></tr>
             <tr><th>Zadnja prijava</th><td>${datumVreme(n.zadnjaPrijava)}</td></tr>
             <tr><th>Prisilna promena lozinke</th><td>${n.moraPromenitiLozinku ? "DA" : "NE"}</td></tr>
-        </table>`;
+        </table>
+        <h6 class="text-muted mt-3">Istorija prijava</h6>
+        <div id="istorijaPrijava"><p class="text-muted">Učitavanje...</p></div>`;
+
+    ucitajIstorijuPrijava(n.nalogId);
+}
+
+async function ucitajIstorijuPrijava(nalogId) {
+    const kontejner = document.getElementById("istorijaPrijava");
+    try {
+        const lista = await apiFetch(`/nalozi/istorija-prijava?nalogId=${nalogId}`);
+        if (!kontejner) return; // panel je u medjuvremenu zatvoren/promenjen
+        if (lista.length === 0) {
+            kontejner.innerHTML = `<p class="text-muted">Nema zabeleženih pokušaja prijave.</p>`;
+            return;
+        }
+        const poslednjih = lista.slice(0, 10);
+        kontejner.innerHTML = `<ul class="list-group list-group-flush">` +
+            poslednjih.map(p => `<li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                <span>${p.uspesno ? "✅" : "❌"} ${NAZIVI_RAZLOGA[p.razlog] ?? p.razlog ?? ""}</span>
+                <span class="text-muted small">${datumVreme(p.vremePokusaja)}</span>
+            </li>`).join("") +
+            `</ul>`;
+    } catch (err) {
+        if (kontejner) kontejner.innerHTML = `<p class="text-muted">Istorija nije dostupna.</p>`;
+    }
 }
 
 function otvoriDetalje(n) {

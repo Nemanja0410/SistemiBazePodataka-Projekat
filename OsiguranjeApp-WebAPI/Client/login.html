@@ -28,6 +28,17 @@
                 <div class="text-center">
                     <a href="register.html">Nemate nalog? Registrujte se</a>
                 </div>
+
+                <!-- Prikazano umesto forme za prijavu kad admin resetuje lozinku (moraPromenitiLozinku) -->
+                <form id="formaPromenaLozinke" class="d-none">
+                    <p class="mb-3">Administrator je resetovao vašu lozinku. Morate postaviti novu pre nastavka.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Nova lozinka *</label>
+                        <input type="password" class="form-control" id="novaLozinka" required>
+                        <div class="form-text">Najmanje 8 karaktera i bar jedna cifra.</div>
+                    </div>
+                    <button type="submit" class="btn btn-osig w-100">Postavi novu lozinku</button>
+                </form>
             </div>
         </div>
         <p class="text-center text-muted mt-3" style="font-size:.8rem;">

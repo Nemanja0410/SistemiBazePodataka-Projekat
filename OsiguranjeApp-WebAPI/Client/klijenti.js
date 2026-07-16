@@ -141,6 +141,19 @@ async function otvoriDetalje(k) {
                 </table>`;
         }
 
+        if (puni.tipKlijenta === "PRAVNO_LICE" || puni.tipKlijenta === "JAVNA_INSTITUCIJA") {
+            const kontakti = await apiFetch(`/kontaktosobe/klijent/${puni.klijentId}`);
+            html += `<h6 class="mt-3 text-muted">Kontakt osobe</h6>`;
+            if (kontakti.length === 0) {
+                html += `<p class="text-muted" style="font-size:.85rem;">Nema unetih kontakt osoba.</p>`;
+            } else {
+                html += `<ul class="mb-0">`;
+                for (const k of kontakti)
+                    html += `<li>${k.ime ?? ""} ${k.prezime ?? ""}${k.funkcija ? " — " + k.funkcija : ""}${k.telefon ? ", " + k.telefon : ""}${k.email ? ", " + k.email : ""}</li>`;
+                html += `</ul>`;
+            }
+        }
+
         sadrzaj.innerHTML = html;
     } catch (err) {
         sadrzaj.innerHTML = `<div class="greska-box">${err.message}</div>`;
@@ -164,6 +177,70 @@ document.getElementById("btnDetaljiIzmeni").addEventListener("click", () => {
     otvoriIzmeni(odabran);
 });
 
+// ---------- Kontakt osobe (samo za pravna lica / javne institucije, inline unutar Izmeni forme) ----------
+
+async function ucitajEzKontakte(klijentId) {
+    const g = document.getElementById("greskaKontakti");
+    g.classList.add("d-none");
+    try {
+        const lista = await apiFetch(`/kontaktosobe/klijent/${klijentId}`);
+        prikaziEzKontakte(lista);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+}
+
+function prikaziEzKontakte(lista) {
+    const tbody = document.getElementById("tbodyEzKontakti");
+    tbody.innerHTML = "";
+    if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td class="text-muted" style="font-size:.85rem;">Nema unetih kontakt osoba.</td></tr>`;
+        return;
+    }
+    for (const k of lista) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td style="font-size:.85rem;">${k.ime ?? ""} ${k.prezime ?? ""}${k.funkcija ? " — " + k.funkcija : ""}${k.telefon ? ", " + k.telefon : ""}${k.email ? ", " + k.email : ""}</td>
+            <td class="text-end" style="width:70px;"></td>
+        `;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Obriši";
+        btnObrisi.onclick = async () => {
+            if (!confirm(`Obrisati kontakt osobu "${k.ime} ${k.prezime}"?`)) return;
+            try { await apiFetch(`/kontaktosobe/${k.kontaktId}`, { method: "DELETE" }); await ucitajEzKontakte(odabran.klijentId); }
+            catch (err) { prikaziGresku(document.getElementById("greskaKontakti"), err); }
+        };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    }
+}
+
+document.getElementById("btnDodajKontakt").addEventListener("click", async () => {
+    const g = document.getElementById("greskaKontakti");
+    g.classList.add("d-none");
+
+    const ime = document.getElementById("koIme").value.trim();
+    const prezime = document.getElementById("koPrezime").value.trim();
+    if (!ime || !prezime) { prikaziGresku(g, new Error("Ime i prezime kontakt osobe su obavezni.")); return; }
+
+    const dto = {
+        klijentId: odabran.klijentId,
+        ime, prezime,
+        funkcija: document.getElementById("koFunkcija").value.trim(),
+        telefon: document.getElementById("koTelefon").value.trim(),
+        email: document.getElementById("koEmail").value.trim()
+    };
+
+    try {
+        await apiFetch("/kontaktosobe", { method: "POST", body: JSON.stringify(dto) });
+        for (const id of ["koIme", "koPrezime", "koFunkcija", "koTelefon", "koEmail"]) document.getElementById(id).value = "";
+        await ucitajEzKontakte(odabran.klijentId);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+});
+
 // ---------- Izmeni (samo zajednicka polja, isto kao WinForms) ----------
 
 function otvoriIzmeni(k) {
@@ -175,6 +252,15 @@ function otvoriIzmeni(k) {
     document.getElementById("ezTelefon").value = k.telefon ?? "";
     document.getElementById("ezEmail").value = k.email ?? "";
     document.getElementById("ezStatus").value = k.status ?? "AKTIVAN";
+
+    const jePravnoLice = k.tipKlijenta === "PRAVNO_LICE" || k.tipKlijenta === "JAVNA_INSTITUCIJA";
+    document.getElementById("ezRedKontakti").classList.toggle("d-none", !jePravnoLice);
+    odabran = k;
+    if (jePravnoLice) {
+        for (const id of ["koIme", "koPrezime", "koFunkcija", "koTelefon", "koEmail"]) document.getElementById(id).value = "";
+        ucitajEzKontakte(k.klijentId);
+    }
+
     modalIzmeni.show();
 }
 

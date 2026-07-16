@@ -16,17 +16,14 @@ let odabrana = null;
 let punaOdabrana = null;
 let trenutnaLista = [];
 let faze = [];
+let pendingOstecenaLica = [];
+let pendingOsteceniPredmeti = [];
+let pendingProcene = [];
 const offDetalji = new bootstrap.Offcanvas(document.getElementById("offDetalji"));
 const modalIzmeni = new bootstrap.Modal(document.getElementById("modalIzmeni"));
 const modalFaze = new bootstrap.Modal(document.getElementById("modalFaze"));
 const modalFazaForma = new bootstrap.Modal(document.getElementById("modalFazaForma"));
 const modalFotografije = new bootstrap.Modal(document.getElementById("modalFotografije"));
-const modalOsteceni = new bootstrap.Modal(document.getElementById("modalOsteceni"));
-const modalOstecenoForma = new bootstrap.Modal(document.getElementById("modalOstecenoForma"));
-const modalPredmeti = new bootstrap.Modal(document.getElementById("modalPredmeti"));
-const modalPredmetForma = new bootstrap.Modal(document.getElementById("modalPredmetForma"));
-const modalProcene = new bootstrap.Modal(document.getElementById("modalProcene"));
-const modalProcenaForma = new bootstrap.Modal(document.getElementById("modalProcenaForma"));
 
 // Podtipovi stete koji imaju sopstvenu tabelu/dodatna polja (isti obrazac kao kod polisa).
 const TIP_SUFIKSI = { AUTO: "Auto", ZDRAVSTVENA: "Zdravstvena", IMOVINSKA: "Imovinska" };
@@ -47,7 +44,10 @@ if (!smeUpis) {
     document.getElementById("btnDodaj").style.display = "none";
     document.getElementById("btnDetaljiObrisi").style.display = "none";
 }
-if (!smeProcena) document.getElementById("btnDodajProcenu").style.display = "none";
+// Sekcije imaju "d-none" u markupu po default-u (sakrivene dok se ne utvrdi uloga) -
+// za smeProcena korisnike se klasa mora ukloniti, ne samo uslovno dodati kad NEMA dozvole.
+document.getElementById("redProceneNovi").classList.toggle("d-none", !smeProcena);
+document.getElementById("ezRedProcene").classList.toggle("d-none", !smeProcena);
 
 function pill(status) {
     const klasa = "status-" + (status || "").toLowerCase();
@@ -154,15 +154,39 @@ async function otvoriDetalje(s) {
 
         if (puna.fazeObrade && puna.fazeObrade.length > 0) {
             html += `<h6 class="text-muted mt-3">Faze obrade (${puna.fazeObrade.length})</h6><ul class="mb-0">`;
-            for (const f of puna.fazeObrade)
-                html += `<li>${f.nazivFaze ?? ""} — ${f.odluka ?? "u toku"}</li>`;
+            for (const f of puna.fazeObrade) {
+                const odgovorno = f.odgovornoLiceIme ? `, ${f.odgovornoLiceIme}` : "";
+                html += `<li>${f.nazivFaze ?? ""} — ${f.odluka ?? "u toku"} (${datum(f.datumPocetka)}${odgovorno})</li>`;
+            }
+            html += `</ul>`;
+        }
+
+        const lica = await apiFetch(`/ostecenalica/steta/${s.stetaId}`);
+        if (lica.length > 0) {
+            html += `<h6 class="text-muted mt-3">Oštećena lica (${lica.length})</h6><ul class="mb-0">`;
+            for (const o of lica) {
+                const opis = o.opisPovrede ? ` — ${o.opisPovrede}` : "";
+                const iznos = o.iznosNaknade != null ? ` (${o.iznosNaknade.toFixed(2)} ${s.valuta ?? "RSD"})` : "";
+                html += `<li>${o.klijentNaziv ?? o.imePrezime ?? ""}${opis}${iznos}</li>`;
+            }
+            html += `</ul>`;
+        }
+
+        const predmeti = await apiFetch(`/osteceniPredmeti/steta/${s.stetaId}`);
+        if (predmeti.length > 0) {
+            html += `<h6 class="text-muted mt-3">Oštećeni predmeti (${predmeti.length})</h6><ul class="mb-0">`;
+            for (const o of predmeti) {
+                const opis = o.opisOstecenja ? ` — ${o.opisOstecenja}` : "";
+                const iznos = o.procenjeniIznos != null ? ` (${o.procenjeniIznos.toFixed(2)} ${s.valuta ?? "RSD"})` : "";
+                html += `<li>${o.tipPredmeta ?? ""}${opis}${iznos}</li>`;
+            }
             html += `</ul>`;
         }
 
         if (puna.proceneSteta && puna.proceneSteta.length > 0) {
             html += `<h6 class="text-muted mt-3">Procene štete (${puna.proceneSteta.length})</h6><ul class="mb-0">`;
             for (const p of puna.proceneSteta)
-                html += `<li>${datum(p.datumProc)} — ${p.proceniteljIme ?? ""}: ${(p.procenjeniIznos ?? 0).toFixed(2)}</li>`;
+                html += `<li>${datum(p.datumProc)} — ${p.proceniteljIme ?? ""}: ${(p.procenjeniIznos ?? 0).toFixed(2)} ${s.valuta ?? "RSD"}</li>`;
             html += `</ul>`;
         }
 
@@ -321,8 +345,12 @@ function prikaziFotografije(lista) {
     tbody.innerHTML = "";
     for (const f of lista) {
         const tr = document.createElement("tr");
+        const jeUpload = f.putanja && f.putanja.startsWith("/uploads/");
+        const celijaFoto = jeUpload
+            ? `<a href="${API_ORIGIN}${f.putanja}" target="_blank"><img src="${API_ORIGIN}${f.putanja}" alt="fotografija" style="height:48px;width:48px;object-fit:cover;border-radius:4px;"></a>`
+            : (f.putanja ?? "");
         tr.innerHTML = `
-            <td>${f.putanja ?? ""}</td>
+            <td>${celijaFoto}</td>
             <td>${f.opis ?? ""}</td>
             <td>${datum(f.datumDodavanja)}</td>
             <td class="text-end"></td>
@@ -347,14 +375,24 @@ document.getElementById("formaFoto").addEventListener("submit", async (e) => {
     const g = document.getElementById("greskaFoto");
     g.classList.add("d-none");
 
-    const dto = {
-        stetaId: odabrana.stetaId,
-        putanja: document.getElementById("ftPutanja").value.trim(),
-        opis: document.getElementById("ftOpis").value.trim()
-    };
+    const fajl = document.getElementById("ftFajl").files[0];
+    if (!fajl) { prikaziGresku(g, new Error("Izaberite fajl (JPG, PNG ili WEBP).")); return; }
+
+    const podaciForme = new FormData();
+    podaciForme.append("stetaId", odabrana.stetaId);
+    podaciForme.append("opis", document.getElementById("ftOpis").value.trim());
+    podaciForme.append("fajl", fajl);
 
     try {
-        await apiFetch("/fotografije", { method: "POST", body: JSON.stringify(dto) });
+        // Rucni fetch (ne apiFetch) - multipart/form-data ne sme imati rucno postavljen Content-Type,
+        // browser sam dodaje boundary; apiFetch uvek forsira "application/json".
+        const headers = {};
+        if (Auth.token) headers["Authorization"] = `Bearer ${Auth.token}`;
+        const resp = await fetch(`${API_BASE}/fotografije/upload`, { method: "POST", headers, body: podaciForme });
+        if (!resp.ok) {
+            const podaci = await resp.json().catch(() => null);
+            throw new Error(podaci?.title ?? `Greška ${resp.status}`);
+        }
         e.target.reset();
         await ucitajFotografije(odabrana.stetaId);
     } catch (err) {
@@ -362,254 +400,260 @@ document.getElementById("formaFoto").addEventListener("submit", async (e) => {
     }
 });
 
-// ---------- Ostecena lica (klijent moze biti registrovan ili slobodan unos imena) ----------
+// ---------- Ostecena lica (ugradjeno u Dodaj/Izmeni; klijent moze biti registrovan ili slobodan unos imena) ----------
 
-document.getElementById("btnDetaljiOsteceni").addEventListener("click", () => {
-    if (!odabrana) return;
-    otvoriOsteceni(odabrana);
-});
+function citajOstecenoLiceInpute(prefiks, g) {
+    const id = (ime) => document.getElementById(prefiks + ime);
+    const klijentId = id("KlijentId").value;
+    const imePrezime = id("ImePrezime").value.trim();
+    if (!klijentId && !imePrezime) { prikaziGresku(g, new Error("Izaberite registrovanog klijenta ili unesite ime i prezime.")); return null; }
 
-async function otvoriOsteceni(s) {
-    document.getElementById("greskaOsteceni").classList.add("d-none");
-    document.getElementById("ostecenNaslov").textContent = `Oštećena lica — ${s.brojStete ?? ""}`;
-    modalOsteceni.show();
-    await ucitajOsteceni(s.stetaId);
-}
-
-async function ucitajOsteceni(stetaId) {
-    const g = document.getElementById("greskaOsteceni");
-    try {
-        const lista = await apiFetch(`/ostecenalica/steta/${stetaId}`);
-        prikaziOsteceni(lista);
-    } catch (err) {
-        prikaziGresku(g, err);
-    }
-}
-
-function prikaziOsteceni(lista) {
-    const tbody = document.getElementById("tbodyOsteceni");
-    tbody.innerHTML = "";
-    for (const o of lista) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${o.klijentNaziv ?? o.imePrezime ?? ""}</td>
-            <td>${o.opisPovrede ?? ""}</td>
-            <td>${o.iznosNaknade != null ? o.iznosNaknade.toFixed(2) + " RSD" : "/"}</td>
-            <td class="text-end"></td>
-        `;
-        const btnIzmeni = document.createElement("button");
-        btnIzmeni.className = "btn btn-sm btn-osig-plava me-1";
-        btnIzmeni.textContent = "Izmeni";
-        btnIzmeni.onclick = () => otvoriOstecenoForma(o);
-        tr.lastElementChild.appendChild(btnIzmeni);
-
-        if (smeUpis) {
-            const btnObrisi = document.createElement("button");
-            btnObrisi.className = "btn btn-sm btn-osig-crvena";
-            btnObrisi.textContent = "Obriši";
-            btnObrisi.onclick = async () => {
-                if (!confirm(`Obrisati oštećeno lice "${o.klijentNaziv ?? o.imePrezime}"?`)) return;
-                try { await apiFetch(`/ostecenalica/${o.ostecenLiceId}`, { method: "DELETE" }); await ucitajOsteceni(odabrana.stetaId); }
-                catch (err) { prikaziGresku(document.getElementById("greskaOsteceni"), err); }
-            };
-            tr.lastElementChild.appendChild(btnObrisi);
-        }
-        tbody.appendChild(tr);
-    }
-}
-
-function otvoriOstecenoForma(o) {
-    document.getElementById("greskaOstecenoForma").classList.add("d-none");
-    document.getElementById("ostecenoFormaNaslov").textContent = o ? "Izmeni oštećeno lice" : "Dodaj oštećeno lice";
-    document.getElementById("olId").value = o ? o.ostecenLiceId : "";
-    document.getElementById("olKlijentId").value = o?.klijentId ?? "";
-    document.getElementById("olImePrezime").value = o?.imePrezime ?? "";
-    document.getElementById("olOpisPovrede").value = o?.opisPovrede ?? "";
-    document.getElementById("olIznosNaknade").value = o?.iznosNaknade ?? "";
-    modalOstecenoForma.show();
-}
-
-document.getElementById("btnDodajOsteceno").addEventListener("click", () => otvoriOstecenoForma(null));
-
-document.getElementById("formaOsteceno").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const g = document.getElementById("greskaOstecenoForma");
-    g.classList.add("d-none");
-
-    const id = document.getElementById("olId").value;
-    const klijentId = document.getElementById("olKlijentId").value;
-    const imePrezime = document.getElementById("olImePrezime").value.trim();
-    if (!klijentId && !imePrezime) {
-        prikaziGresku(g, new Error("Izaberite registrovanog klijenta ili unesite ime i prezime."));
-        return;
-    }
-
-    const iznosRaw = document.getElementById("olIznosNaknade").value;
-    const dto = {
-        stetaId: odabrana.stetaId,
+    const iznosRaw = id("IznosNaknade").value;
+    const rez = {
         klijentId: klijentId ? parseInt(klijentId) : null,
         imePrezime,
-        opisPovrede: document.getElementById("olOpisPovrede").value.trim(),
-        iznosNaknade: iznosRaw ? parseFloat(iznosRaw) : null
+        opisPovrede: id("OpisPovrede").value.trim(),
+        iznosNaknade: iznosRaw ? parseFloat(iznosRaw) : null,
+        naziv: klijentId ? sveKlijenti.find(k => k.klijentId === parseInt(klijentId))?.naziv : imePrezime
     };
-
-    try {
-        if (id) await apiFetch(`/ostecenalica/${id}`, { method: "PUT", body: JSON.stringify(dto) });
-        else await apiFetch("/ostecenalica", { method: "POST", body: JSON.stringify(dto) });
-        modalOstecenoForma.hide();
-        await ucitajOsteceni(odabrana.stetaId);
-    } catch (err) {
-        prikaziGresku(g, err);
-    }
-});
-
-// ---------- Osteceni predmeti (jedna steta moze imati vise ostecenih predmeta) ----------
-
-document.getElementById("btnDetaljiPredmeti").addEventListener("click", () => {
-    if (!odabrana) return;
-    otvoriPredmeti(odabrana);
-});
-
-async function otvoriPredmeti(s) {
-    document.getElementById("greskaPredmeti").classList.add("d-none");
-    document.getElementById("predmetiNaslov").textContent = `Oštećeni predmeti — ${s.brojStete ?? ""}`;
-    modalPredmeti.show();
-    await ucitajPredmete(s.stetaId);
+    id("KlijentId").value = ""; id("ImePrezime").value = ""; id("OpisPovrede").value = ""; id("IznosNaknade").value = "";
+    return rez;
 }
 
-async function ucitajPredmete(stetaId) {
-    const g = document.getElementById("greskaPredmeti");
-    try {
-        const lista = await apiFetch(`/osteceniPredmeti/steta/${stetaId}`);
-        prikaziPredmete(lista);
-    } catch (err) {
-        prikaziGresku(g, err);
-    }
+// Oštećena lica/predmeti/procene nemaju svoje polje za valutu - iznosi se podrazumevaju
+// u valuti same štete, pa se ta valuta dohvata iz forme (Dodaj) ili iz ucitane stete (Izmeni).
+function trenutnaValutaNova() {
+    return document.getElementById("valutaSteta").value || "RSD";
+}
+function trenutnaValutaIzmena() {
+    return document.getElementById("ezValuta").value || punaOdabrana?.valuta || "RSD";
 }
 
-function prikaziPredmete(lista) {
-    const tbody = document.getElementById("tbodyPredmeti");
+function prikaziOstecenaLicaNovi() {
+    const tbody = document.getElementById("tbodyOstecenaLicaNovi");
     tbody.innerHTML = "";
-    for (const o of lista) {
+    const valuta = trenutnaValutaNova();
+    pendingOstecenaLica.forEach((o, i) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${o.tipPredmeta ?? ""}</td>
-            <td>${o.opisOstecenja ?? ""}</td>
-            <td>${o.procenjeniIznos != null ? o.procenjeniIznos.toFixed(2) + " RSD" : "/"}</td>
-            <td class="text-end"></td>
-        `;
-        const btnIzmeni = document.createElement("button");
-        btnIzmeni.className = "btn btn-sm btn-osig-plava me-1";
-        btnIzmeni.textContent = "Izmeni";
-        btnIzmeni.onclick = () => otvoriPredmetForma(o);
-        tr.lastElementChild.appendChild(btnIzmeni);
+        tr.innerHTML = `<td style="font-size:.85rem;">${o.naziv}${o.opisPovrede ? " — " + o.opisPovrede : ""}${o.iznosNaknade != null ? ` (${o.iznosNaknade.toFixed(2)} ${valuta})` : ""}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingOstecenaLica.splice(i, 1); prikaziOstecenaLicaNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
+}
 
-        if (smeUpis) {
-            const btnObrisi = document.createElement("button");
-            btnObrisi.className = "btn btn-sm btn-osig-crvena";
-            btnObrisi.textContent = "Obriši";
-            btnObrisi.onclick = async () => {
-                if (!confirm(`Obrisati oštećeni predmet "${o.tipPredmeta}"?`)) return;
-                try { await apiFetch(`/osteceniPredmeti/${o.osteceniPredmetId}`, { method: "DELETE" }); await ucitajPredmete(odabrana.stetaId); }
-                catch (err) { prikaziGresku(document.getElementById("greskaPredmeti"), err); }
-            };
-            tr.lastElementChild.appendChild(btnObrisi);
-        }
+document.getElementById("btnDodajOstecenoLiceNovi").addEventListener("click", () => {
+    const o = citajOstecenoLiceInpute("ol", document.getElementById("greskaSteta"));
+    if (o === null) return;
+    pendingOstecenaLica.push(o);
+    prikaziOstecenaLicaNovi();
+});
+
+async function ucitajOstecenaLicaIzmena(stetaId) {
+    const g = document.getElementById("greskaOsteceni");
+    g.classList.add("d-none");
+    try {
+        const lista = await apiFetch(`/ostecenalica/steta/${stetaId}`);
+        prikaziOstecenaLicaIzmena(lista);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+}
+
+function prikaziOstecenaLicaIzmena(lista) {
+    const tbody = document.getElementById("tbodyOstecenaLicaIzmena");
+    tbody.innerHTML = "";
+    const valuta = trenutnaValutaIzmena();
+    for (const o of lista) {
+        const naziv = o.klijentNaziv ?? o.imePrezime ?? "";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${naziv}${o.opisPovrede ? " — " + o.opisPovrede : ""}${o.iznosNaknade != null ? ` (${o.iznosNaknade.toFixed(2)} ${valuta})` : ""}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = async () => {
+            if (!confirm(`Ukloniti "${naziv}" kao oštećeno lice?`)) return;
+            try { await apiFetch(`/ostecenalica/${o.ostecenLiceId}`, { method: "DELETE" }); await ucitajOstecenaLicaIzmena(punaOdabrana.stetaId); }
+            catch (err) { prikaziGresku(document.getElementById("greskaOsteceni"), err); }
+        };
+        tr.lastElementChild.appendChild(btnObrisi);
         tbody.appendChild(tr);
     }
 }
 
-function otvoriPredmetForma(o) {
-    document.getElementById("greskaPredmetForma").classList.add("d-none");
-    document.getElementById("predmetFormaNaslov").textContent = o ? "Izmeni oštećeni predmet" : "Dodaj oštećeni predmet";
-    document.getElementById("opId").value = o ? o.osteceniPredmetId : "";
-    document.getElementById("opTipPredmeta").value = o?.tipPredmeta ?? "";
-    document.getElementById("opOpisOstecenja").value = o?.opisOstecenja ?? "";
-    document.getElementById("opProcenjeniIznos").value = o?.procenjeniIznos ?? "";
-    modalPredmetForma.show();
-}
+document.getElementById("btnDodajOstecenoLiceIzmena").addEventListener("click", async () => {
+    const g = document.getElementById("greskaOsteceni");
+    const o = citajOstecenoLiceInpute("ezOl", g);
+    if (o === null) return;
+    try {
+        await apiFetch("/ostecenalica", {
+            method: "POST",
+            body: JSON.stringify({ stetaId: punaOdabrana.stetaId, klijentId: o.klijentId, imePrezime: o.imePrezime, opisPovrede: o.opisPovrede, iznosNaknade: o.iznosNaknade })
+        });
+        await ucitajOstecenaLicaIzmena(punaOdabrana.stetaId);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+});
 
-document.getElementById("btnDodajPredmet").addEventListener("click", () => otvoriPredmetForma(null));
+// ---------- Osteceni predmeti (ugradjeno u Dodaj/Izmeni; jedna steta moze imati vise ostecenih predmeta) ----------
 
-document.getElementById("formaPredmet").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const g = document.getElementById("greskaPredmetForma");
-    g.classList.add("d-none");
+function citajOsteceniPredmetInpute(prefiks, g) {
+    const id = (ime) => document.getElementById(prefiks + ime);
+    const tipPredmeta = id("TipPredmeta").value.trim();
+    if (!tipPredmeta) { prikaziGresku(g, new Error("Unesite tip predmeta.")); return null; }
 
-    const id = document.getElementById("opId").value;
-    const iznosRaw = document.getElementById("opProcenjeniIznos").value;
-    const dto = {
-        stetaId: odabrana.stetaId,
-        tipPredmeta: document.getElementById("opTipPredmeta").value.trim(),
-        opisOstecenja: document.getElementById("opOpisOstecenja").value.trim(),
+    const iznosRaw = id("ProcenjeniIznos").value;
+    const rez = {
+        tipPredmeta,
+        opisOstecenja: id("OpisOstecenja").value.trim(),
         procenjeniIznos: iznosRaw ? parseFloat(iznosRaw) : null
     };
+    id("TipPredmeta").value = ""; id("OpisOstecenja").value = ""; id("ProcenjeniIznos").value = "";
+    return rez;
+}
 
+function prikaziOsteceniPredmetiNovi() {
+    const tbody = document.getElementById("tbodyOsteceniPredmetiNovi");
+    tbody.innerHTML = "";
+    const valuta = trenutnaValutaNova();
+    pendingOsteceniPredmeti.forEach((o, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${o.tipPredmeta}${o.opisOstecenja ? " — " + o.opisOstecenja : ""}${o.procenjeniIznos != null ? ` (${o.procenjeniIznos.toFixed(2)} ${valuta})` : ""}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingOsteceniPredmeti.splice(i, 1); prikaziOsteceniPredmetiNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById("btnDodajOsteceniPredmetNovi").addEventListener("click", () => {
+    const o = citajOsteceniPredmetInpute("op", document.getElementById("greskaSteta"));
+    if (o === null) return;
+    pendingOsteceniPredmeti.push(o);
+    prikaziOsteceniPredmetiNovi();
+});
+
+async function ucitajOsteceniPredmetiIzmena(stetaId) {
+    const g = document.getElementById("greskaPredmeti");
+    g.classList.add("d-none");
     try {
-        if (id) await apiFetch(`/osteceniPredmeti/${id}`, { method: "PUT", body: JSON.stringify(dto) });
-        else await apiFetch("/osteceniPredmeti", { method: "POST", body: JSON.stringify(dto) });
-        modalPredmetForma.hide();
-        await ucitajPredmete(odabrana.stetaId);
+        const lista = await apiFetch(`/osteceniPredmeti/steta/${stetaId}`);
+        prikaziOsteceniPredmetiIzmena(lista);
+    } catch (err) {
+        prikaziGresku(g, err);
+    }
+}
+
+function prikaziOsteceniPredmetiIzmena(lista) {
+    const tbody = document.getElementById("tbodyOsteceniPredmetiIzmena");
+    tbody.innerHTML = "";
+    const valuta = trenutnaValutaIzmena();
+    for (const o of lista) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${o.tipPredmeta ?? ""}${o.opisOstecenja ? " — " + o.opisOstecenja : ""}${o.procenjeniIznos != null ? ` (${o.procenjeniIznos.toFixed(2)} ${valuta})` : ""}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = async () => {
+            if (!confirm(`Ukloniti oštećeni predmet "${o.tipPredmeta}"?`)) return;
+            try { await apiFetch(`/osteceniPredmeti/${o.osteceniPredmetId}`, { method: "DELETE" }); await ucitajOsteceniPredmetiIzmena(punaOdabrana.stetaId); }
+            catch (err) { prikaziGresku(document.getElementById("greskaPredmeti"), err); }
+        };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    }
+}
+
+document.getElementById("btnDodajOsteceniPredmetIzmena").addEventListener("click", async () => {
+    const g = document.getElementById("greskaPredmeti");
+    const o = citajOsteceniPredmetInpute("ezOp", g);
+    if (o === null) return;
+    try {
+        await apiFetch("/osteceniPredmeti", { method: "POST", body: JSON.stringify({ stetaId: punaOdabrana.stetaId, ...o }) });
+        await ucitajOsteceniPredmetiIzmena(punaOdabrana.stetaId);
     } catch (err) {
         prikaziGresku(g, err);
     }
 });
 
-// ---------- Procene stete (datum, procenitelj, metod, nalaz, iznos, preporuka) ----------
+// ---------- Procene stete (ugradjeno u Dodaj/Izmeni, samo ADMIN/PROCENITELJ; datum, procenitelj, metod, nalaz, iznos, preporuka) ----------
 
-document.getElementById("btnDetaljiProcene").addEventListener("click", () => {
-    if (!odabrana) return;
-    otvoriProcene(odabrana);
-});
+function citajProcenaInpute(prefiks, g) {
+    const id = (ime) => document.getElementById(prefiks + ime);
+    const proceniteljId = id("ProceniteljId").value;
+    if (!proceniteljId) { prikaziGresku(g, new Error("Izaberite procenitelja.")); return null; }
 
-async function otvoriProcene(s) {
-    document.getElementById("greskaProcene").classList.add("d-none");
-    document.getElementById("proceneNaslov").textContent = `Procene štete — ${s.brojStete ?? ""}`;
-    modalProcene.show();
-    await ucitajProcene(s.stetaId);
+    const iznosRaw = id("ProcenjeniIznos").value;
+    const proceniteljNaziv = id("ProceniteljId").selectedOptions[0]?.textContent ?? "";
+    const rez = {
+        proceniteljId: parseInt(proceniteljId),
+        metodProc: id("MetodProc").value.trim(),
+        nalaz: id("Nalaz").value.trim(),
+        procenjeniIznos: iznosRaw ? parseFloat(iznosRaw) : 0,
+        preporuka: id("Preporuka").value.trim(),
+        proceniteljNaziv
+    };
+    id("ProceniteljId").value = ""; id("MetodProc").value = ""; id("Nalaz").value = ""; id("ProcenjeniIznos").value = ""; id("Preporuka").value = "";
+    return rez;
 }
 
-async function ucitajProcene(stetaId) {
+function prikaziProceneNovi() {
+    const tbody = document.getElementById("tbodyProceneNovi");
+    tbody.innerHTML = "";
+    const valuta = trenutnaValutaNova();
+    pendingProcene.forEach((p, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${p.proceniteljNaziv} — ${p.metodProc || "/"}: ${p.procenjeniIznos.toFixed(2)} ${valuta}</td><td class="text-end" style="width:70px;"></td>`;
+        const btnObrisi = document.createElement("button");
+        btnObrisi.className = "btn btn-sm btn-osig-crvena";
+        btnObrisi.textContent = "Ukloni";
+        btnObrisi.onclick = () => { pendingProcene.splice(i, 1); prikaziProceneNovi(); };
+        tr.lastElementChild.appendChild(btnObrisi);
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById("btnDodajProcenuNovi").addEventListener("click", () => {
+    const p = citajProcenaInpute("pr", document.getElementById("greskaSteta"));
+    if (p === null) return;
+    pendingProcene.push(p);
+    prikaziProceneNovi();
+});
+
+async function ucitajProceneIzmena(stetaId) {
     const g = document.getElementById("greskaProcene");
+    g.classList.add("d-none");
     try {
         const lista = await apiFetch(`/procenesteta/steta/${stetaId}`);
-        prikaziProcene(lista);
+        prikaziProceneIzmena(lista);
     } catch (err) {
         prikaziGresku(g, err);
     }
 }
 
-function prikaziProcene(lista) {
-    const tbody = document.getElementById("tbodyProcene");
+function prikaziProceneIzmena(lista) {
+    const tbody = document.getElementById("tbodyProceneIzmena");
     tbody.innerHTML = "";
+    const valuta = trenutnaValutaIzmena();
     for (const p of [...lista].sort((a, b) => new Date(b.datumProc) - new Date(a.datumProc))) {
-        const tr = document.createElement("tr");
         const proceniteljOpis = `${p.proceniteljIme ?? ""}`
             + (p.proceniteljBrojLicence ? ` (licenca ${p.proceniteljBrojLicence})` : "")
             + (p.proceniteljOblasti && p.proceniteljOblasti.length ? ` — ${p.proceniteljOblasti.join(", ")}` : "");
-        tr.innerHTML = `
-            <td>${datum(p.datumProc)}</td>
-            <td>${proceniteljOpis}</td>
-            <td>${p.metodProc ?? ""}</td>
-            <td>${p.nalaz ?? ""}</td>
-            <td>${p.procenjeniIznos != null ? p.procenjeniIznos.toFixed(2) : "/"}</td>
-            <td>${p.preporuka ?? ""}</td>
-            <td class="text-end"></td>
-        `;
-        if (smeProcena) {
-            const btnIzmeni = document.createElement("button");
-            btnIzmeni.className = "btn btn-sm btn-osig-plava me-1";
-            btnIzmeni.textContent = "Izmeni";
-            btnIzmeni.onclick = () => otvoriProcenaForma(p);
-            tr.lastElementChild.appendChild(btnIzmeni);
-        }
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td style="font-size:.85rem;">${datum(p.datumProc)} — ${proceniteljOpis}: ${p.metodProc || "/"}, ${(p.procenjeniIznos ?? 0).toFixed(2)} ${valuta}${p.preporuka ? " — " + p.preporuka : ""}</td><td class="text-end" style="width:70px;"></td>`;
         if (smeBrisanjeProcena) {
             const btnObrisi = document.createElement("button");
             btnObrisi.className = "btn btn-sm btn-osig-crvena";
-            btnObrisi.textContent = "Obriši";
+            btnObrisi.textContent = "Ukloni";
             btnObrisi.onclick = async () => {
                 if (!confirm("Obrisati ovu procenu štete?")) return;
-                try { await apiFetch(`/procenesteta/${p.procenaId}`, { method: "DELETE" }); await ucitajProcene(odabrana.stetaId); }
+                try { await apiFetch(`/procenesteta/${p.procenaId}`, { method: "DELETE" }); await ucitajProceneIzmena(punaOdabrana.stetaId); }
                 catch (err) { prikaziGresku(document.getElementById("greskaProcene"), err); }
             };
             tr.lastElementChild.appendChild(btnObrisi);
@@ -618,44 +662,16 @@ function prikaziProcene(lista) {
     }
 }
 
-function otvoriProcenaForma(p) {
-    document.getElementById("greskaProcenaForma").classList.add("d-none");
-    document.getElementById("procenaFormaNaslov").textContent = p ? "Izmeni procenu" : "Dodaj procenu";
-    document.getElementById("prId").value = p ? p.procenaId : "";
-    document.getElementById("prProceniteljId").value = p?.proceniteljId ?? "";
-    document.getElementById("prMetodProc").value = p?.metodProc ?? "";
-    document.getElementById("prNalaz").value = p?.nalaz ?? "";
-    document.getElementById("prProcenjeniIznos").value = p?.procenjeniIznos ?? "";
-    document.getElementById("prPreporuka").value = p?.preporuka ?? "";
-    modalProcenaForma.show();
-}
-
-document.getElementById("btnDodajProcenu").addEventListener("click", () => otvoriProcenaForma(null));
-
-document.getElementById("formaProcena").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const g = document.getElementById("greskaProcenaForma");
-    g.classList.add("d-none");
-
-    const id = document.getElementById("prId").value;
-    const proceniteljId = document.getElementById("prProceniteljId").value;
-    if (!proceniteljId) { prikaziGresku(g, new Error("Izaberite procenitelja.")); return; }
-
-    const iznosRaw = document.getElementById("prProcenjeniIznos").value;
-    const dto = {
-        stetaId: odabrana.stetaId,
-        proceniteljId: parseInt(proceniteljId),
-        metodProc: document.getElementById("prMetodProc").value.trim(),
-        nalaz: document.getElementById("prNalaz").value.trim(),
-        procenjeniIznos: iznosRaw ? parseFloat(iznosRaw) : 0,
-        preporuka: document.getElementById("prPreporuka").value.trim()
-    };
-
+document.getElementById("btnDodajProcenuIzmena").addEventListener("click", async () => {
+    const g = document.getElementById("greskaProcene");
+    const p = citajProcenaInpute("ezPr", g);
+    if (p === null) return;
     try {
-        if (id) await apiFetch(`/procenesteta/${id}`, { method: "PUT", body: JSON.stringify(dto) });
-        else await apiFetch("/procenesteta", { method: "POST", body: JSON.stringify(dto) });
-        modalProcenaForma.hide();
-        await ucitajProcene(odabrana.stetaId);
+        await apiFetch("/procenesteta", {
+            method: "POST",
+            body: JSON.stringify({ stetaId: punaOdabrana.stetaId, proceniteljId: p.proceniteljId, metodProc: p.metodProc, nalaz: p.nalaz, procenjeniIznos: p.procenjeniIznos, preporuka: p.preporuka })
+        });
+        await ucitajProceneIzmena(punaOdabrana.stetaId);
     } catch (err) {
         prikaziGresku(g, err);
     }
@@ -665,7 +681,6 @@ document.getElementById("formaProcena").addEventListener("submit", async (e) => 
 
 async function ucitajComboove() {
     const selPodnosilac = document.getElementById("podnosilacId");
-    const selOsteceni = document.getElementById("olKlijentId");
     try {
         sveKlijenti = await apiFetch("/klijenti");
         for (const k of sveKlijenti) {
@@ -673,10 +688,12 @@ async function ucitajComboove() {
             opt.value = k.klijentId;
             opt.textContent = k.naziv;
             selPodnosilac.appendChild(opt);
-
-            const opt2 = opt.cloneNode(true);
-            selOsteceni.appendChild(opt2);
         }
+        for (const sel of [document.getElementById("olKlijentId"), document.getElementById("ezOlKlijentId")]) {
+            popuniSelect(sel, sveKlijenti, "klijentId", k => k.naziv);
+            sel.insertAdjacentHTML("afterbegin", '<option value="">-- nije registrovan klijent --</option>');
+        }
+
         svePolise = await apiFetch("/polise");
         osveziPoliseZaKlijenta();
 
@@ -702,20 +719,35 @@ async function ucitajComboove() {
         document.getElementById("ezVoziloId").insertAdjacentHTML("afterbegin", '<option value="">-- nije poznato --</option>');
 
         const sviProcenitelji = sveOsoblje.filter(o => o.tipOsoblja === "PROCENITELJ");
-        popuniSelect(document.getElementById("prProceniteljId"), sviProcenitelji, "osobljeId",
-            p => `${p.ime} ${p.prezime}${p.brojLicence ? " — licenca " + p.brojLicence : ""}${p.oblasti && p.oblasti.length ? " (" + p.oblasti.join(", ") + ")" : ""}`);
+        for (const sel of [document.getElementById("prProceniteljId"), document.getElementById("ezPrProceniteljId")]) {
+            popuniSelect(sel, sviProcenitelji, "osobljeId",
+                p => `${p.ime} ${p.prezime}${p.brojLicence ? " — licenca " + p.brojLicence : ""}${p.oblasti && p.oblasti.length ? " (" + p.oblasti.join(", ") + ")" : ""}`);
+            sel.insertAdjacentHTML("afterbegin", '<option value="">-- izaberite procenitelja --</option>');
+        }
     } catch (err) {
         prikaziGresku(greska, err);
     }
 }
 
+// Koja vrsta stete odgovara kojem tipu polise -- nema smisla prijaviti npr. zdravstvenu stetu na putno osiguranje.
+const MAPA_VRSTA_STETE_TIP_POLISE = {
+    AUTO: ["AUTO"],
+    ZDRAVSTVENA: ["ZDRAVSTVENO"],
+    IMOVINSKA: ["IMOVINSKO"],
+    PUTNA: ["PUTNO"],
+    ZIVOTNA: ["ZIVOTNO"],
+    OSTALO: ["POLJOPRIVREDNO", "ODGOVORNOST", "SPECIJALIZOVANO"]
+};
+
 function osveziPoliseZaKlijenta() {
     const klijentId = parseInt(document.getElementById("podnosilacId").value) || 0;
+    const vrsta = document.getElementById("vrstaStete").value;
+    const dozvoljeniTipovi = MAPA_VRSTA_STETE_TIP_POLISE[vrsta] ?? [];
     const sel = document.getElementById("polisaId");
     sel.innerHTML = "";
-    const filtrirane = svePolise.filter(p => p.ugovaracId === klijentId);
+    const filtrirane = svePolise.filter(p => p.ugovaracId === klijentId && dozvoljeniTipovi.includes(p.tipOsiguranja));
     if (filtrirane.length === 0) {
-        sel.innerHTML = '<option value="">-- klijent nema polisa --</option>';
+        sel.innerHTML = '<option value="">-- klijent nema polisu odgovarajućeg tipa --</option>';
         return;
     }
     for (const p of filtrirane) {
@@ -728,8 +760,20 @@ function osveziPoliseZaKlijenta() {
 
 document.getElementById("podnosilacId").addEventListener("change", osveziPoliseZaKlijenta);
 
-document.getElementById("vrstaStete").addEventListener("change", (e) => azurirajVidljivostTipa(e.target.value, ""));
+document.getElementById("vrstaStete").addEventListener("change", (e) => {
+    azurirajVidljivostTipa(e.target.value, "");
+    osveziPoliseZaKlijenta();
+});
 azurirajVidljivostTipa(document.getElementById("vrstaStete").value, "");
+
+document.getElementById("modalSteta").addEventListener("show.bs.modal", () => {
+    pendingOstecenaLica = [];
+    prikaziOstecenaLicaNovi();
+    pendingOsteceniPredmeti = [];
+    prikaziOsteceniPredmetiNovi();
+    pendingProcene = [];
+    prikaziProceneNovi();
+});
 
 function tipSpecificnoTeloSteta(vrsta, prefiks) {
     const el = (ime) => document.getElementById(prefiks ? prefiks + ime : ime.charAt(0).toLowerCase() + ime.slice(1));
@@ -785,10 +829,37 @@ document.getElementById("formaSteta").addEventListener("submit", async (e) => {
 
     try {
         const endpoint = endpointZaTip(vrsta) ?? "/stete";
-        await apiFetch(endpoint, { method: "POST", body: JSON.stringify(dto) });
+        const rezultat = await apiFetch(endpoint, { method: "POST", body: JSON.stringify(dto) });
+
+        for (const o of pendingOstecenaLica) {
+            try {
+                await apiFetch("/ostecenalica", {
+                    method: "POST",
+                    body: JSON.stringify({ stetaId: rezultat.stetaId, klijentId: o.klijentId, imePrezime: o.imePrezime, opisPovrede: o.opisPovrede, iznosNaknade: o.iznosNaknade })
+                });
+            } catch (err) { prikaziGresku(g, err); }
+        }
+        for (const o of pendingOsteceniPredmeti) {
+            try {
+                await apiFetch("/osteceniPredmeti", { method: "POST", body: JSON.stringify({ stetaId: rezultat.stetaId, ...o }) });
+            } catch (err) { prikaziGresku(g, err); }
+        }
+        for (const p of pendingProcene) {
+            try {
+                await apiFetch("/procenesteta", {
+                    method: "POST",
+                    body: JSON.stringify({ stetaId: rezultat.stetaId, proceniteljId: p.proceniteljId, metodProc: p.metodProc, nalaz: p.nalaz, procenjeniIznos: p.procenjeniIznos, preporuka: p.preporuka })
+                });
+            } catch (err) { prikaziGresku(g, err); }
+        }
+        pendingOstecenaLica = []; prikaziOstecenaLicaNovi();
+        pendingOsteceniPredmeti = []; prikaziOsteceniPredmetiNovi();
+        pendingProcene = []; prikaziProceneNovi();
+
         bootstrap.Modal.getInstance(document.getElementById("modalSteta")).hide();
         e.target.reset();
         azurirajVidljivostTipa(document.getElementById("vrstaStete").value, "");
+        osveziPoliseZaKlijenta();
         ucitajStete();
     } catch (err) {
         prikaziGresku(g, err);
@@ -821,6 +892,26 @@ function otvoriIzmeni(s) {
     } else if (s.vrstaStete === "IMOVINSKA") {
         document.getElementById("ezProcenaOstecenja").value = s.procenaOstecenja ?? "";
         document.getElementById("ezIzvodjacSanacije").value = s.izvodjacSanacije ?? "";
+    }
+
+    document.getElementById("ezOlKlijentId").value = "";
+    document.getElementById("ezOlImePrezime").value = "";
+    document.getElementById("ezOlOpisPovrede").value = "";
+    document.getElementById("ezOlIznosNaknade").value = "";
+    ucitajOstecenaLicaIzmena(s.stetaId);
+
+    document.getElementById("ezOpTipPredmeta").value = "";
+    document.getElementById("ezOpOpisOstecenja").value = "";
+    document.getElementById("ezOpProcenjeniIznos").value = "";
+    ucitajOsteceniPredmetiIzmena(s.stetaId);
+
+    if (smeProcena) {
+        document.getElementById("ezPrProceniteljId").value = "";
+        document.getElementById("ezPrMetodProc").value = "";
+        document.getElementById("ezPrNalaz").value = "";
+        document.getElementById("ezPrProcenjeniIznos").value = "";
+        document.getElementById("ezPrPreporuka").value = "";
+        ucitajProceneIzmena(s.stetaId);
     }
 
     modalIzmeni.show();

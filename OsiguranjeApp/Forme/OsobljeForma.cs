@@ -97,11 +97,21 @@ namespace OsiguranjApp.Forme
             }
         }
 
+        private void btnOblastiProcene_Click(object? sender, EventArgs e)
+        {
+            if (odabranoOsoblje() is not ProceniteljBasic pb)
+            { MessageBox.Show("Izaberite procenitelja.", "Info"); return; }
+            var f = new OblastiProceneForma(pb);
+            f.ShowDialog();
+            ucitajOsoblje();
+        }
+
         private void dgvOsoblje_SelectionChanged(object? sender, EventArgs e)
         {
             var o = odabranoOsoblje();
-            if (o == null) return;
+            if (o == null) { btnOblastiProcene.Visible = false; return; }
 
+            btnOblastiProcene.Visible = o is ProceniteljBasic;
             lblDetaljiNaziv.Text = $"{o.Ime} {o.Prezime}";
             rtbDetalji.Clear();
             rtbDetalji.AppendText($"Tip:            {o.TipOsoblja}\n");
@@ -117,6 +127,22 @@ namespace OsiguranjApp.Forme
                 rtbDetalji.AppendText($"Licenca:        {ap.Licenca}\n");
                 rtbDetalji.AppendText($"Region rada:    {ap.RegionRada}\n");
                 rtbDetalji.AppendText($"Provizija:      {ap.ProvizijaProcenat:F2}%\n");
+            }
+            else if (o is ProceniteljBasic pb)
+            {
+                rtbDetalji.AppendText("\n── Procenitelj detalji ─────────────────\n");
+                rtbDetalji.AppendText($"Broj licence:   {pb.BrojLicence}\n");
+
+                rtbDetalji.AppendText("\nOblasti procene:\n");
+                if (pb.Oblasti.Count == 0) rtbDetalji.AppendText("  (nema unetih oblasti)\n");
+                else foreach (var ob in pb.Oblasti) rtbDetalji.AppendText($"  • {UiHelper.NazivOblasti(ob)}\n");
+
+                rtbDetalji.AppendText($"\nProcene štete ({pb.Procene.Count}):\n");
+                if (pb.Procene.Count == 0) rtbDetalji.AppendText("  (nema izvršenih procena)\n");
+                else foreach (var pr in pb.Procene)
+                    rtbDetalji.AppendText(
+                        $"  • {pr.DatumProc:dd.MM.yyyy}  Šteta {pr.StetaBrojStete ?? $"#{pr.StetaId}"}  " +
+                        $"— {pr.ProcenjeniIznos:N2} ({pr.MetodProc ?? "/"})\n");
             }
         }
     }

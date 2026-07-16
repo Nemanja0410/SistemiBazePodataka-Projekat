@@ -6,6 +6,7 @@ namespace OsiguranjApp.DTOs
     {
         public int      ProcenaId       { get; set; }
         public int      StetaId         { get; set; }
+        public string?  StetaBrojStete  { get; set; }
         public DateTime DatumProc       { get; set; }
         public int      ProceniteljId   { get; set; }
         public string?  ProceniteljIme  { get; set; }

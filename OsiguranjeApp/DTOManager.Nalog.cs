@@ -15,6 +15,32 @@ namespace OsiguranjApp
         private const int MaxNeuspesnihPrijava = 5;
         private const int PbkdfIteracije        = 100000;
 
+        public static List<IstorijaPrijaveBasic> vratiIstorijuPrijava(int? nalogId)
+        {
+            ProveriOvlascenje("ADMIN");
+            var lista = new List<IstorijaPrijaveBasic>();
+            try
+            {
+                ISession s = DataLayer.GetSession();
+                var q = s.Query<IstorijaPrijave>().AsQueryable();
+                if (nalogId.HasValue)
+                    q = q.Where(x => x.Nalog != null && x.Nalog.NalogId == nalogId.Value);
+                foreach (var ip in q.OrderByDescending(x => x.VremePokusaja))
+                    lista.Add(new IstorijaPrijaveBasic
+                    {
+                        IstorijaPrijaveId = ip.IstorijaPrijaveId,
+                        NalogId = ip.Nalog?.NalogId,
+                        KorisnickoImePokusaj = ip.KorisnickoImePokusaj,
+                        VremePokusaja = ip.VremePokusaja,
+                        Uspesno = ip.Uspesno,
+                        Razlog = ip.Razlog
+                    });
+                s.Close();
+            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Greška"); }
+            return lista;
+        }
+
         public static List<OsobljePregled> vratiOsobljeZaRegistraciju()
         {
             var lista = new List<OsobljePregled>();
